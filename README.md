@@ -4,7 +4,7 @@ Email Assessor is a **100% private, local-first** Human-in-the-Loop (HITL) email
 
 ---
 
-# Preview images:
+# Preview images (Using fake information):
 
 ### 🖥️ Core Dashboard Layouts
 | Light Mode Dashboard | Dark Mode Analytics |
