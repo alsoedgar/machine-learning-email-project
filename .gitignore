@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDEs and Editors
+.vscode/
+.idea/
+.project
+.pydevproject
+.settings/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+
+# User-Generated Data & Logs
+*.log
+feedback_log.csv
+model_state.json
+uploads/
+temp_screenshots/
+static/screenshots/
+*.eml
+*.mbox
+*.msg
+*.txt
+!requirements.txt
+!README.md
+!message (4).eml
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini

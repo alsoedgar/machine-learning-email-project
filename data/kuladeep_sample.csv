@@ -1,0 +1,52 @@
+text,label,phishing_type,severity,confidence
+Your PayPal account has been limited. Verify your identity immediately or your account will be permanently suspended. Click here: http://paypal-verify-secure.ru/login,1,credential_harvesting,high,0.97
+URGENT: Your Apple ID has been compromised. Sign in now to protect your account: http://apple-id-support-center.com/verify. Failure to act within 24 hours will result in permanent account lock.,1,credential_harvesting,high,0.95
+Microsoft Security Alert: Unusual sign-in activity detected. Verify your account credentials to prevent unauthorized access: https://microsoft-account-recovery.net/signin,1,credential_harvesting,high,0.96
+Your Netflix subscription is on hold due to a billing issue. Update your payment now: http://netflix-billing-update.xyz/payment. Ignoring this will result in account suspension.,1,credential_harvesting,high,0.94
+"Dear customer, your online banking session has expired. Re-authenticate at: http://secure-bank-login.info/verify to continue using your account.",1,credential_harvesting,medium,0.88
+Your Google Account will be disabled in 24 hours due to a policy violation. Review and appeal here: http://google-account-appeal.cc/review,1,account_suspension,high,0.98
+ACTION REQUIRED: Your email account has exceeded storage limits and will be suspended. Upgrade now: http://mail-upgrade-portal.net/storage,1,account_suspension,high,0.96
+Warning: Your Instagram account will be deactivated due to inactivity. Log in to prevent deletion: http://social-account-keep.info/login,1,account_suspension,medium,0.85
+Your Amazon account has been temporarily suspended due to suspicious activity. Verify your identity to restore access: http://amazon-verify-id.net/account,1,account_suspension,high,0.95
+"Congratulations! You have been selected for a $1,000 reward. Claim it by providing your bank details at: http://reward-claim-portal.net/claim",1,financial_fraud,high,0.99
+"IRS NOTICE: You are owed a tax refund of $3,241. To receive your payment click: http://irs-refund-gov.cc/claim and submit your SSN and bank routing number.",1,financial_fraud,high,0.97
+Your package from UPS could not be delivered. A customs fee of $2.99 is required: http://ups-delivery-fee.xyz/pay. Unclaimed packages are returned after 5 days.,1,financial_fraud,high,0.95
+BITCOIN INVESTMENT: Our AI-powered trading system generated 300% returns in 90 days. Minimum investment $500. Contact: crypto-invest@protonmail.com to secure your spot.,1,financial_fraud,high,0.96
+Please review attached invoice #INV-2024-00847. Requires your immediate attention. Download: http://invoice-view.ru/INV-2024-00847.exe,1,malware_delivery,high,0.99
+HR Department: Your Q4 salary slip is ready. Download the encrypted PDF: http://hr-portal-docs.com/salary-slip-q4.exe. Password: emp2024,1,malware_delivery,high,0.97
+"Hi, this is the CEO. I need you to process an urgent wire transfer of $50,000 to our new vendor immediately. Keep this confidential. Reply with confirmation.",1,business_email_compromise,high,0.98
+From the CFO: We need to transfer funds to a new supplier account by end of day. Account 8847291034 Routing 021000021. Do not discuss with others.,1,business_email_compromise,high,0.96
+CRITICAL SYSTEM ALERT: Your computer has been infected with malware. Call Microsoft certified technicians immediately at 1-800-555-0199 to prevent data loss.,1,tech_support_scam,medium,0.9
+Windows Defender has detected a dangerous virus on your device. Your personal files are at risk. Call Microsoft Support: 1-888-555-0244 to remove the threat now.,1,tech_support_scam,medium,0.88
+"WINNER NOTIFICATION: Your email was selected in the UK National Lottery Annual Draw. You have won GBP 850,000. Contact your claims agent at lottery-winner@gmail.com",1,lottery_scam,medium,0.92
+USPS: We attempted to deliver your package but no one was available. Pay a $1.50 redelivery fee: http://usps-package-hold.xyz/redeliver to reschedule.,1,delivery_scam,medium,0.86
+FedEx Alert: Your shipment #9876543210 is pending customs clearance. A fee of $4.95 is required: http://fedex-customs.net/pay. Unclaimed packages returned after 5 days.,1,delivery_scam,medium,0.84
+"I am Dr. James Wilson, attorney representing the estate of a deceased foreigner. You share the same surname and may be entitled to $4.5 million. Reply confidentially.",1,advance_fee_fraud,high,0.98
+"Dear Friend, I am a Nigerian prince seeking a trustworthy partner to transfer $28 million from a dormant account. You will receive 30% commission. Kindly reply.",1,advance_fee_fraud,high,0.96
+FREE COVID-19 Home Testing Kit - Government Authorized. Register at http://covid-test-kit-free.net/register to receive your free kit with results in 24 hours.,1,health_scam,medium,0.87
+"Hi team, reminder that our weekly standup is tomorrow at 10 AM EST. Please review the agenda I sent last week. Looking forward to your updates.",0,legitimate,low,0.02
+Your Amazon order #113-2847593-1234567 has shipped. Estimated delivery is Friday. Track your package at amazon.com/orders.,0,legitimate,low,0.01
+Thank you for contacting support. Your ticket #SUP-48291 has been created. We will respond within 1 business day. Reference this number for any follow-ups.,0,legitimate,low,0.03
+"Hi Sarah, hope you are doing well! I wanted to follow up on the project timeline we discussed last Tuesday. Can we schedule a call this week to go over deliverables?",0,legitimate,low,0.02
+Your monthly bank statement for June 2024 is now available. Log in to your account at the official bank website to view your statement. This is an automated notification.,0,legitimate,low,0.01
+"Welcome to the team! We are excited to have you join us. Your onboarding documents are attached. Please complete and return by your first day, Monday August 5.",0,legitimate,low,0.02
+"Newsletter: 5 tips to improve your productivity this week. Read the full article on our blog. To unsubscribe from future emails, click the link below.",0,legitimate,low,0.03
+"Flight confirmation: UA 4892 departing Chicago ORD on August 14 at 2:30 PM, arriving Los Angeles LAX at 5:45 PM. Confirmation: XPQR73. Check in online 24 hours before.",0,legitimate,low,0.01
+Reminder: your annual performance review is scheduled for next Wednesday at 3 PM with your manager. Please complete your self-assessment form in HR by Monday.,0,legitimate,low,0.02
+Your subscription has been renewed. You have been charged $9.99 for the monthly plan. This will appear on your statement as STREAMINGCO. Contact support with questions.,0,legitimate,low,0.01
+"Hi John, I reviewed the proposal you sent. Overall it looks solid. I have a few suggestions on the pricing section. Can we chat tomorrow afternoon? Best, Mark",0,legitimate,low,0.03
+Your appointment with Dr. Johnson is confirmed for July 15 at 2:00 PM at 123 Medical Center Drive. Please arrive 15 minutes early to complete paperwork. Call 555-1234 to reschedule.,0,legitimate,low,0.02
+JIRA: New issue assigned to you - BUG-2847: Login page shows error on mobile Safari. Priority: High. Due: July 10. Click to view details and update status.,0,legitimate,low,0.01
+Your pull request #142 has been approved and merged into main. Build status: passing. Deployment to staging will complete in approximately 10 minutes.,0,legitimate,low,0.02
+Quarterly earnings call transcript now available. Q2 2024 results exceeded analyst expectations with revenue up 12% year-over-year. View the full investor relations page for details.,0,legitimate,low,0.01
+Library reminder: items checked out are due in 3 days. You can renew them online at library.org/my-account or in person at any branch location.,0,legitimate,low,0.03
+Your Zoom meeting is starting in 10 minutes. Topic: Q3 Marketing Strategy. Meeting ID: 893 4721 0834. Passcode: mktg2024. Join from your computer or mobile device.,0,legitimate,low,0.01
+Thank you for your purchase at TechStore. Order #TS-294847 for USB-C Hub (x2) totaling $59.98 has been processed. Estimated delivery: 3-5 business days.,0,legitimate,low,0.02
+Your Slack workspace backup completed. 847 messages archived. Storage used: 2.3 GB of 10 GB. Next backup scheduled for Monday at 3 AM UTC.,0,legitimate,low,0.01
+"Invoice #4921 from Acme Supplies LLC for $1,245.00 is due. Payment terms: Net 30. Please remit to the bank account on file. Contact accounting@acmesupplies.com with questions.",0,legitimate,low,0.02
+"Your GitHub Actions workflow completed successfully. CI Pipeline on branch main: 127 tests passed, 0 failed. Deployment to production initiated.",0,legitimate,low,0.01
+Please welcome our new software engineer Jane Doe joining the backend team Monday. Jane has 5 years of Python and cloud infrastructure experience.,0,legitimate,low,0.02
+"Good morning! Your daily digest for July 6: Top stories in technology, markets, and science. Curated by our editors. Read more at the news portal.",0,legitimate,low,0.01
+Your package from Etsy has been delivered to your front door. Order: Handmade ceramic mug set. Leave a review to help the seller grow their small business.,0,legitimate,low,0.02
+"Your password was changed successfully on July 5 at 9:14 AM. If you did not make this change, contact our support team immediately at support@company.com.",0,legitimate,low,0.03
+Homework reminder: Chapter 7 reading is due Thursday. Quiz on chapters 5-7 next Monday. Office hours: Tuesdays 2-4 PM and Thursdays 1-3 PM in Room 201.,0,legitimate,low,0.01

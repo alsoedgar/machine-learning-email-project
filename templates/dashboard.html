@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Assessor - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Updated path to point to your Flask static directory -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=2">
+</head>
+<body>
+
+    <!-- Top Navigation Header -->
+    <div class="app-header">
+        <svg class="logo-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span class="logo-text">Email Assessor Dashboard</span>
+    </div>
+
+    <!-- Main Grid Container -->
+    <div class="grid-container">
+        
+        <!-- Left Column (Navigation Sidebar on Desktop) -->
+        <div class="content-body" id="leftColumn">
+            <!-- Navigation Sidebar stays in sidebar. Welcome banner and stats are inside Assess Tab -->
+            <div class="nav-bar">
+                <button class="nav-item active" id="tabAssess">
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                    </span>
+                    <span>Assess</span>
+                </button>
+                <button class="nav-item" id="tabHistory">
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </span>
+                    <span>History</span>
+                </button>
+                <button class="nav-item" id="tabSettings">
+                    <span class="nav-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </span>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Column (Main Workspace containing dynamic tab panels) -->
+        <div class="content-body" id="rightColumn">
+            
+            <!-- Main Assess Workspace -->
+            <div id="assessTabContent" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <!-- Brand Welcome description (Spans full-width above columns) -->
+                <div class="hero">
+                    <h2>Forensic-grade email analysis at your fingertips.</h2>
+                    <p>Paste headers, body content, or upload raw files to detect phishing attempts, spoofed senders, and malicious payloads.</p>
+                </div>
+
+                <!-- 2-Column Grid on Desktop -->
+                <div class="assess-grid">
+                    
+                    <!-- Assess left-hand sub-container (Input, Stats) -->
+                    <div class="assess-section">
+                        <!-- Email Assessment Input Card -->
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title">Email Assessment</span>
+                                <button class="upload-btn" id="uploadBtn">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                    Upload Email File
+                                </button>
+                                <input type="file" id="fileInput" accept=".eml,.txt,.msg,.mbox,*" style="display: none;">
+                            </div>
+                            
+                            <textarea id="emailInput" placeholder="Paste email content, headers, or suspicious URLs here for deep analysis..."></textarea>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted);">
+                                <span>Auto-detecting format</span>
+                            </div>
+
+                            <button class="btn-assess" id="assessBtn">
+                                Assess Safety
+                            </button>
+                        </div>
+
+                        <!-- Stats counters panel -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">Emails Scanned</div>
+                                <div class="stat-val" id="scannedCount">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Blocked Threats</div>
+                                <div class="stat-val" id="blockedCount" style="color: var(--threat-color);">0</div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Indicators Card (Defanged URLs & attachment hashes) -->
+                        <div class="card" id="techIndicatorsCard" style="display: none; margin-top: 1rem;">
+                            <div class="card-header" style="margin-bottom: 0.5rem; border-bottom: none; padding-bottom: 0;">
+                                <span class="card-title" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-main);">Extracted Indicators</span>
+                            </div>
+                            <div class="ioc-list-group" style="padding: 0.5rem 1rem;">
+                                <span class="ioc-sub-title">Defanged URLs</span>
+                                <div class="ioc-list" id="iocLinksList"></div>
+                            </div>
+                            <div class="ioc-divider" style="margin: 0.5rem 1rem;"></div>
+                            <div class="ioc-list-group" id="iocAttachmentsGroup" style="padding: 0 1rem 1rem 1rem;">
+                                <span class="ioc-sub-title">Attachment Hashes</span>
+                                <div class="ioc-list" id="iocHashesList"></div>
+                            </div>
+                        </div>
+
+                        <!-- Email Sandbox Viewer Card (Relocated to left column) -->
+                        <div class="card" id="forensicCard" style="display: none; margin-top: 1rem;">
+                            <div class="forensic-box" id="forensicBox" style="border: none; padding: 0; background: transparent; box-shadow: none;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; gap: 0.5rem; flex-wrap: wrap;">
+                                    <span class="forensic-title" style="margin: 0;">Email Sandbox Viewer</span>
+                                    <!-- Tab Toggles -->
+                                    <div style="display: flex; gap: 0.25rem; background: var(--review-panel-bg); padding: 0.2rem; border-radius: 6px; border: 1px solid var(--border-light);">
+                                        <button id="btnViewAnnotated" style="background: var(--card-bg); border: none; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; cursor: pointer; color: var(--text-main); transition: background-color 0.2s; outline: none;">Annotated Text</button>
+                                        <button id="btnViewVisual" style="background: transparent; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: background-color 0.2s; outline: none;">Visual Preview</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Email Headers Display Panel -->
+                                <div id="emailHeadersDisplay" style="background: var(--review-panel-bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                                    <div><strong style="color: var(--text-muted); font-size: 0.75rem;">Subject:</strong> <span id="headerSubject" style="font-weight: 600; color: var(--text-main); margin-left: 0.25rem;"></span></div>
+                                    <div><strong style="color: var(--text-muted); font-size: 0.75rem;">From:</strong> <span id="headerFrom" style="font-family: 'JetBrains Mono', monospace; color: var(--text-main); font-size: 0.75rem; margin-left: 0.25rem;"></span></div>
+                                    <div><strong style="color: var(--text-muted); font-size: 0.75rem;">To:</strong> <span id="headerTo" style="font-family: 'JetBrains Mono', monospace; color: var(--text-main); font-size: 0.75rem; margin-left: 0.25rem;"></span></div>
+                                    <div><strong style="color: var(--text-muted); font-size: 0.75rem;">Date:</strong> <span id="headerDate" style="color: var(--text-muted); margin-left: 0.25rem;"></span></div>
+                                </div>
+
+                                <!-- Annotated Text View container -->
+                                <div class="forensic-body" id="forensicBody">
+                                    <!-- Populated dynamically -->
+                                </div>
+
+                                <!-- Visual HTML sandbox iframe (strictly sandboxed!) -->
+                                <div id="visualSandboxContainer" style="display: none; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-light); background: white;">
+                                    <iframe id="visualSandboxIframe" sandbox="allow-same-origin" style="width: 100%; height: 350px; border: none; display: block; background: #ffffff;"></iframe>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Assess right-hand sub-container (Scan Results or Empty Placeholder) -->
+                    <div class="assess-section">
+                        <!-- Scan Results Card -->
+                        <div class="card" id="resultsCard" style="display: none;">
+                            <div class="score-row" style="margin-bottom: 0.75rem;">
+                                <span style="font-weight: 600; color: var(--text-main);">Analysis Result</span>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Just now</span>
+                            </div>
+
+                            <!-- Results Sub-Tab Navigation -->
+                            <div class="results-tab-bar" style="display: flex; gap: 0.25rem; background: var(--review-panel-bg); padding: 0.2rem; border-radius: 8px; border: 1px solid var(--border-light); margin-bottom: 1.25rem;">
+                                <button class="results-tab-btn active" id="btnResTabForensics" style="flex: 1; text-align: center; border: none; background: var(--card-bg); padding: 0.4rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; color: var(--text-main); transition: all 0.2s; outline: none;">Forensics</button>
+                                <button class="results-tab-btn" id="btnResTabOrigin" style="flex: 1; text-align: center; border: none; background: transparent; padding: 0.4rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: all 0.2s; outline: none;">Sender Origin</button>
+                                <button class="results-tab-btn" id="btnResTabLinks" style="flex: 1; text-align: center; border: none; background: transparent; padding: 0.4rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: all 0.2s; outline: none;">Link Previews</button>
+                            </div>
+
+                            <!-- TAB 1: FORENSICS -->
+                            <div id="resultsForensics">
+                                <!-- Score ring gauge -->
+                                <div class="gauge-container">
+                                    <svg class="gauge-svg" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="40" class="gauge-circle gauge-bg" />
+                                        <circle cx="50" cy="50" r="40" class="gauge-circle gauge-fg" id="scoreCircle" />
+                                    </svg>
+                                    <div class="gauge-val">
+                                        <span class="gauge-score" id="scoreNumber">0</span>
+                                        <span class="gauge-label">/ 100</span>
+                                    </div>
+                                </div>
+
+                                <!-- Verdict Badge -->
+                                <span class="result-badge" id="resBadge">UNSET</span>
+
+                                <!-- Forensic Summary box -->
+                                <div class="ioc-box" id="iocBox" style="display: none;">
+                                    <span class="ioc-title">Forensic Analysis Summary</span>
+                                    <div class="ioc-summary" id="iocSummary"></div>
+                                </div>
+
+                                <!-- Cross-Log Threat Referencer Correlation Warnings -->
+                                <div class="similarity-box" id="similarityBox" style="display: none; margin-top: 1rem;">
+                                    <div class="similarity-title">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                            <line x1="12" y1="9" x2="12" y2="13"/>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                        </svg>
+                                        <span>Cross-Log Correlation alerts</span>
+                                    </div>
+                                    <div class="similarity-list" id="similarityList"></div>
+                                </div>
+
+                                <!-- Threat indicators -->
+                                <div style="border-top: 1px solid var(--border-light); padding-top: 1rem; margin-top: 1rem;">
+                                    <span class="stat-label">Security Findings</span>
+                                    <div class="findings-list" id="findingsList">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+
+                                <!-- Interactive Human in the loop review -->
+                                <div class="review-panel">
+                                    <div id="reviewInteractive">
+                                        <span class="review-header">Submit Final Verdict</span>
+                                        <div class="review-btns" style="margin-top: 0.5rem;">
+                                            <button class="btn-verdict btn-verdict-safe" id="approveBtn">Approve (Safe)</button>
+                                            <button class="btn-verdict btn-verdict-spam" id="spamBtn">Flag as Spam</button>
+                                            <button class="btn-verdict btn-verdict-threat" id="rejectBtn">Reject (Malicious)</button>
+                                        </div>
+                                    </div>
+                                    <div id="reviewStatus" style="display: none; text-align: center; padding: 0.75rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem;">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 2: SENDER ORIGIN -->
+                            <div id="resultsOrigin" style="display: none;">
+                                <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.6rem; padding-top: 0.25rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 0.4rem;">
+                                        <span style="color: var(--text-muted); font-weight: 500;">Origin IP Address</span>
+                                        <span id="originIP" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text-main); background: var(--review-panel-bg); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--border-light);">0.0.0.0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 0.4rem;">
+                                        <span style="color: var(--text-muted); font-weight: 500;">Geographic Origin</span>
+                                        <span id="originLocation" style="font-weight: 600; color: var(--text-main);">Unknown</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 0.4rem; gap: 1rem;">
+                                        <span style="color: var(--text-muted); font-weight: 500;">ISP / Provider</span>
+                                        <span id="originISP" style="font-weight: 600; color: var(--text-main); text-align: right; word-break: break-word;">Unknown</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 0.4rem;">
+                                        <span style="color: var(--text-muted); font-weight: 500;">VPN / Proxy IP</span>
+                                        <span id="originVPN" style="font-weight: 600; color: var(--text-main);">No</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 0.4rem;">
+                                        <span style="color: var(--text-muted); font-weight: 500;">Datacenter Hosting</span>
+                                        <span id="originHosting" style="font-weight: 600; color: var(--text-main);">No</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="color: var(--text-muted); font-weight: 500;">Whitelist Alignment</span>
+                                        <span id="whitelistStatus" style="font-weight: 600; font-size: 0.75rem;">Not Whitelisted</span>
+                                    </div>
+                                    <div id="originWarning" style="margin-top: 0.5rem; display: none; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.75rem; text-align: center;">
+                                        <!-- Dynamic warning status (Red for Nigeria, etc.) -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 3: LINK PREVIEWS -->
+                            <div id="resultsLinks" style="display: none;">
+                                <div class="traced-links-grid" id="tracedLinksGrid" style="padding-top: 0.25rem;">
+                                    <!-- Dynamically populated traced link thumbnails and chains -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Placeholder before scan with SVG inbox  -->
+                        <div class="card" id="scanPlaceholder" style="padding: 3rem 1.5rem; text-align: center; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.3;">
+                                <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+                                <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                            </svg>
+                            <h3 style="font-weight: 600; color: var(--text-main);">Awaiting Analysis</h3>
+                            <p style="font-size: 0.8rem; line-height: 1.4;">Paste email headers or load an EML file to view threat rings and run inline annotations.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- History View Tab (Hidden by default) -->
+            <div id="historyTabContent" class="card tab-hidden">
+                <div class="card-header">
+                    <span class="card-title">Analyst Feedback Log</span>
+                    <button class="btn-clear-all-link" id="clearAllLogsBtn">Clear All</button>
+                </div>
+                <div class="history-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Sender</th>
+                                <th>Subject</th>
+                                <th>Indicators</th>
+                                <th>Verdict</th>
+                                <th style="width: 40px; text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-muted);">No logs available.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings / Model View Tab (Hidden by default) -->
+            <div id="settingsTabContent" class="card tab-hidden">
+                <div class="card-header">
+                    <span class="card-title">Retraining & Classifier Settings</span>
+                </div>
+                
+                <!-- Appearance Switcher -->
+                <div class="switch-container">
+                    <div class="switch-label-group">
+                        <span class="switch-title">Dark Mode</span>
+                        <span class="switch-subtitle">Toggle dark theme colors on/off</span>
+                    </div>
+                    <input type="checkbox" id="darkModeToggle" class="switch-input">
+                </div>
+
+                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-top: 0.5rem;">
+                    If the machine learning classifier produces false positives/negatives, correct them by logging a verdict mismatch. Retrain the model to incorporate recent log entries.
+                </p>
+                <button class="btn-assess" id="retrainBtn" style="margin-top: 0.5rem;">
+                    Retrain Model Now
+                </button>
+                <button class="upload-btn" id="resetStatsBtn" style="align-self: flex-start; margin-top: 0.5rem; color: var(--threat-color); border-color: var(--threat-color); margin-bottom: 1.5rem;">
+                    Clear Scanned Stats
+                </button>
+
+                <div class="ioc-divider" style="margin: 1.5rem 0 1rem 0;"></div>
+
+                <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.25rem;">Sender Domain Whitelist</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 1rem;">
+                    Exempt safe automated senders or infrastructure domains (e.g. <code>outlook.com</code>, <code>microsoft.com</code>) from triggering sender domain mismatches.
+                </p>
+
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
+                    <input type="text" id="whitelistInput" placeholder="e.g. outlook.com" style="flex-grow: 1; padding: 0.5rem 0.75rem; border: 1px solid var(--border-light); border-radius: 8px; background: var(--review-panel-bg); color: var(--text-main); font-size: 0.85rem; outline: none; transition: border-color 0.3s;">
+                    <button class="btn-assess" id="addWhitelistBtn" style="padding: 0.5rem 1rem; width: auto; font-size: 0.8rem; margin: 0;">Add Domain</button>
+                </div>
+
+                <div id="whitelistList" style="display: flex; flex-wrap: wrap; gap: 0.5rem; max-height: 150px; overflow-y: auto; padding: 0.25rem 0;">
+                    <!-- Dynamically populated whitelist tags -->
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Screenshot Sandbox Modal -->
+    <div id="screenshotModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="9" cy="9" r="2"/>
+                        <path d="M21 15l-3.08-3.08a2 2 0 0 0-2.83 0L12 15l-4-4-5 5"/>
+                    </svg>
+                    <span>Isolated Screenshot Sandbox</span>
+                </div>
+                <button class="modal-close" id="modalCloseBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamically populated loading, error, or image -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Trace Modal -->
+    <div id="linkTraceModal" class="modal-overlay">
+        <div class="modal-container modal-wide">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <span>Deep Link & Redirect Tracker</span>
+                </div>
+                <button class="modal-close" id="linkTraceCloseBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="linkTraceBody">
+                <!-- Dynamically populated content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Screenshot Lightbox Modal -->
+    <div id="screenshotLightboxModal" class="modal-overlay">
+        <div class="lightbox-container">
+            <button class="lightbox-close" id="lightboxCloseBtn" title="Close Lightbox">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <img id="lightboxImg" class="lightbox-img" src="" alt="High Resolution Page Preview">
+            <div id="lightboxCaption" class="lightbox-caption"></div>
+        </div>
+    </div>
+
+    <!-- Document Level Overlay Tooltip -->
+    <div id="globalTooltip" class="global-tooltip"></div>
+
+    <!-- Notification Toast (No Emojis) -->
+    <div class="toast" id="toast">
+        <span id="toastMsg"></span>
+    </div>
+
+    <!-- Updated path to point to your Flask static directory -->
+    <script src="{{ url_for('static', filename='dashboard.js') }}?v=2" defer></script>
+</body>
+</html>
