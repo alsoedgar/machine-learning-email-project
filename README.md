@@ -65,40 +65,68 @@ Here is what each component of the project does:
 
 ---
 
-## 🚀 Setup & Execution
+## 🚀 How to Use Email Assessor
 
-### Prerequisites
-* Ensure **Python 3.10+** is installed on your computer.
+There are **three ways** to use this tool depending on your needs:
 
-### 1. Install Dependencies
-Run the following commands in your terminal to set up a virtual environment and install the required dependencies:
+---
+
+### ⚡ Option 1: Download the Pre-Built Executable (Easiest — No Python Required)
+
+If you just want to use the app without installing anything:
+
+1. Go to the [**Releases**](../../releases) page of this repository.
+2. Download **`EmailAssessor.exe`** (Windows) from the latest release.
+3. Double-click `EmailAssessor.exe` — the app will start automatically and open your browser to the dashboard.
+
+> **Note:** On first launch Windows may show a SmartScreen warning since the app is unsigned. Click **"More info" → "Run anyway"** to proceed. The app runs entirely locally and makes no external connections.
+
+---
+
+### 🌐 Option 2: Run the Web Dashboard from Source Code
+
+If you want to run the full web app with all features from the source:
+
+#### Prerequisites
+- **Python 3.10+** must be installed on your computer.
+
 ```powershell
-# Create virtual environment
+# 1. Clone or download this repository, then open a terminal in the project folder
+
+# 2. Create and activate a virtual environment
 python -m venv .venv
+.\.venv\Scripts\activate        # Windows
+# source .venv/bin/activate     # Mac / Linux
 
-# Activate virtual environment (Windows)
-.\.venv\Scripts\activate
-
-# Install requirements
+# 3. Install all dependencies
 pip install -r requirements.txt
 
-# Install Playwright Chromium binaries
+# 4. Install Playwright's Chromium browser (required for link tracing)
 playwright install chromium
-```
 
-### 2. Run the Web Dashboard
-Start the local Flask app server:
-```bash
+# 5. Launch the dashboard
 python web_app.py
 ```
-Open your browser and navigate to:
-👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
-### 3. Run the CLI tool
-Run the colorized interactive terminal assistant:
-```bash
+Your browser will automatically open to 👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
+
+---
+
+### 💻 Option 3: Use the Command-Line Interface (CLI)
+
+If you prefer a terminal-based workflow, the CLI provides the same full analysis without a browser:
+
+```powershell
+# Analyze by pasting/typing email content interactively:
 python cli.py
+
+# Analyze a saved .eml file directly:
+python cli.py -f "path/to/your/email.eml"
 ```
+
+The CLI outputs a color-coded security report with verdict, indicators, defanged links, and origin IP routing.
+
+---
 
 ## ℹ️ Gmail / Google Relay Geolocation Notice
 
@@ -108,6 +136,28 @@ To clarify this and prevent analyst confusion, the application:
 1. **Detects Google ISP Names:** Inspects the originating ISP and flags Google-owned relay gateways.
 2. **Dynamic Location Labeling:** Appends a `[Google Mail Relay]` tag to resolved locations.
 3. **Forensic Info Notice:** Renders an informational banner in the **Sender Origin** tab explaining that the geolocation represents Google's datacenter relay network, rather than the physical location of the sender.
+
+---
+
+## 🏗️ Building the Executable Yourself
+
+If you want to compile your own `EmailAssessor.exe` from source:
+
+```powershell
+# Install PyInstaller
+pip install pyinstaller
+
+# Build the single-file executable
+pyinstaller --noconfirm --onefile --windowed `
+  --add-data "templates;templates" `
+  --add-data "static;static" `
+  --add-data "data;data" `
+  --icon="static/icon.ico" `
+  --name="EmailAssessor" `
+  web_app.py
+```
+
+The compiled executable will appear in the `dist/` folder.
 
 ---
 
