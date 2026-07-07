@@ -19,9 +19,9 @@ Email Assessor is a **100% private, local-first** Human-in-the-Loop (HITL) email
 ### 📊 Logs & Indicators
 | Feature / Log Breakdowns |
 | :---: |
-| <img src="https://github.com/user-attachments/assets/5c97493c-d836-44d8-bfb8-9f5f1b420b3d" width="90%" /> |
-| <img src="https://github.com/user-attachments/assets/1ccac1f1-c193-4f23-a26b-1fbde57e6300" width="75%" /> |
-| <img src="https://github.com/user-attachments/assets/29220243-e3c3-4ffa-9ae7-91f874d511f6" width="65%" /> |
+| <img src="https://github.com/user-attachments/assets/5c97493c-d836-44d8-bfb8-9f5f1b420b3d" width="50%" /> |
+| <img src="https://github.com/user-attachments/assets/1ccac1f1-c193-4f23-a26b-1fbde57e6300" width="50%" /> |
+| <img src="https://github.com/user-attachments/assets/29220243-e3c3-4ffa-9ae7-91f874d511f6" width="50%" /> |
 
 ---
 
