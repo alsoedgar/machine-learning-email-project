@@ -6,13 +6,21 @@ Email Assessor is a **100% private, local-first** Human-in-the-Loop (HITL) email
 
 # Preview images:
 
-<img width="2832" height="1579" alt="image" src="https://github.com/user-attachments/assets/4d739cd3-8285-4b44-8e97-72cf4ff623da" />
-<img width="1075" height="1392" alt="image" src="https://github.com/user-attachments/assets/20ca0efd-8c60-445c-b569-66dc9538ad5c" />
-<img width="2814" height="1590" alt="image" src="https://github.com/user-attachments/assets/8773d602-707c-4a9b-98cf-779d735c01a8" />
-<img width="1008" height="1055" alt="image" src="https://github.com/user-attachments/assets/4b7abd69-217a-4e61-9415-34c4fd20d624" />
-<img width="913" height="366" alt="image" src="https://github.com/user-attachments/assets/29220243-e3c3-4ffa-9ae7-91f874d511f6" />
-<img width="2130" height="533" alt="image" src="https://github.com/user-attachments/assets/5c97493c-d836-44d8-bfb8-9f5f1b420b3d" />
-<img width="1111" height="465" alt="image" src="https://github.com/user-attachments/assets/1ccac1f1-c193-4f23-a26b-1fbde57e6300" />
+# Preview Images
+
+<img src="https://github.com/user-attachments/assets/4d739cd3-8285-4b44-8e97-72cf4ff623da" width="85%" alt="Dashboard Overview" />
+
+<img src="https://github.com/user-attachments/assets/8773d602-707c-4a9b-98cf-779d735c01a8" width="85%" alt="Dark Mode Analysis" />
+
+<img src="https://github.com/user-attachments/assets/20ca0efd-8c60-445c-b569-66dc9538ad5c" width="45%" alt="Forensics Pane" />
+
+<img src="https://github.com/user-attachments/assets/4b7abd69-217a-4e61-9415-34c4fd20d624" width="45%" alt="Sandbox View" />
+
+<img src="https://github.com/user-attachments/assets/5c97493c-d836-44d8-bfb8-9f5f1b420b3d" width="75%" alt="Log Analytics" />
+
+<img src="https://github.com/user-attachments/assets/1ccac1f1-c193-4f23-a26b-1fbde57e6300" width="60%" alt="Extracted Indicators" />
+
+<img src="https://github.com/user-attachments/assets/29220243-e3c3-4ffa-9ae7-91f874d511f6" width="50%" alt="Feedback Log" />
 
 ---
 
