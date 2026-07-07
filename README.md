@@ -14,14 +14,14 @@ Email Assessor is a **100% private, local-first** Human-in-the-Loop (HITL) email
 ### 🔍 Deep Dive & Sandbox Views
 | Forensics & Cross-Log Alerts | Email Sandbox Viewer |
 | :---: | :---: |
-| <img src="https://github.com/user-attachments/assets/20ca0efd-8c60-445c-b569-66dc9538ad5c" width="100%" /> | <img src="https://github.com/user-attachments/assets/4b7abd69-217a-4e61-9415-34c4fd20d624" width="100%" /> |
+| <img src="https://github.com/user-attachments/assets/20ca0efd-8c60-445c-b569-66dc9538ad5c" width="80%" /> | <img src="https://github.com/user-attachments/assets/4b7abd69-217a-4e61-9415-34c4fd20d624" width="80%" /> |
 
 ### 📊 Logs & Indicators
 | Feature / Log Breakdowns |
 | :---: |
-| <img src="https://github.com/user-attachments/assets/5c97493c-d836-44d8-bfb8-9f5f1b420b3d" width="50%" /> |
-| <img src="https://github.com/user-attachments/assets/1ccac1f1-c193-4f23-a26b-1fbde57e6300" width="50%" /> |
-| <img src="https://github.com/user-attachments/assets/29220243-e3c3-4ffa-9ae7-91f874d511f6" width="50%" /> |
+| <img src="https://github.com/user-attachments/assets/5c97493c-d836-44d8-bfb8-9f5f1b420b3d" width="70%" /> |
+| <img src="https://github.com/user-attachments/assets/1ccac1f1-c193-4f23-a26b-1fbde57e6300" width="70%" /> |
+| <img src="https://github.com/user-attachments/assets/29220243-e3c3-4ffa-9ae7-91f874d511f6" width="70%" /> |
 
 ---
 
