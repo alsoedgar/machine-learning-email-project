@@ -17,7 +17,19 @@ from werkzeug.utils import secure_filename  # <-- Add this import
 # Corrected module import from 'EmailAnalyzersrc' to 'EmailAnalyzer'
 from analyzer import EmailAnalyzer
 
-app = Flask(__name__)
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, relative_path)
+
+template_dir = resource_path('templates')
+static_dir = resource_path('static')
+
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'your-secret-key-here')
 
 # Initialize Flask-WTF CSRF protection
@@ -404,8 +416,16 @@ def api_sandbox_stop():
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    import webbrowser
+    from threading import Timer
+    
+    def open_browser():
+        webbrowser.open('http://127.0.0.1:5000')
+        
     print(f"================================================================")
     print(f"[*] Email Assessor running securely via Flask at http://127.0.0.1:5000")
     print(f"[*] Press Ctrl+C to stop the application server.")
     print(f"================================================================")
+    
+    Timer(1.2, open_browser).start()
     app.run(host='127.0.0.1', port=5000, debug=False)
