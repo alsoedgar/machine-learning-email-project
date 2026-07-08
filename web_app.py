@@ -411,6 +411,25 @@ def api_sandbox_stop():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+@app.route('/api/shutdown', methods=['POST'])
+@csrf.exempt
+def api_shutdown():
+    # Releases and closes persistent playwrites
+    try:
+        analyzer.stop_sandbox()
+    except Exception:
+        pass
+    
+    # Gracefully shut down the python process
+    print("[*] Dashboard tab closed. Shutting down Email Assessor process...")
+    # Delay termination slightly to allow response dispatch
+    def terminate():
+        time.sleep(0.5)
+        os._exit(0)
+    
+    Timer(0.1, terminate).start()
+    return jsonify({'status': 'shutting_down'})
+
 # ---------------------------------------------------------------------------
 # Execution Entry point
 # ---------------------------------------------------------------------------
@@ -424,7 +443,7 @@ if __name__ == '__main__':
         
     print(f"================================================================")
     print(f"[*] Email Assessor running securely via Flask at http://127.0.0.1:5000")
-    print(f"[*] Press Ctrl+C to stop the application server.")
+    print(f"[*] Close the browser tab or press Ctrl+C to terminate.")
     print(f"================================================================")
     
     Timer(1.2, open_browser).start()

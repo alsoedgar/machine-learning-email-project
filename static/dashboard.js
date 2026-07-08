@@ -1790,4 +1790,10 @@ screenshotLightboxModal.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeScreenshotLightbox();
+});
+
+// Auto-shutdown feature: trigger API shutdown when tab/window is closed
+window.addEventListener('beforeunload', () => {
+    // navigator.sendBeacon is highly reliable for running async requests during tab closure
+    navigator.sendBeacon('/api/shutdown');
 });
