@@ -437,7 +437,35 @@ def api_shutdown():
 if __name__ == '__main__':
     import webbrowser
     from threading import Timer
+    import subprocess
     
+    # PyInstaller environment path fix for Playwright
+    # Force Playwright to search for browsers in the user's local AppData folder instead of the temporary extraction dir
+    if getattr(sys, 'frozen', False):
+        user_profile = os.environ.get('USERPROFILE') or os.environ.get('HOME') or 'C:\\Users\\maldo'
+        os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.join(user_profile, 'AppData', 'Local', 'ms-playwright')
+
+    # Auto-installation routine: verify if Chromium binary is installed, otherwise download it silently
+    def check_and_install_playwright():
+        try:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                # This will throw an error if chromium executable is missing or not installed
+                p.chromium.launch(headless=True)
+            print("[*] Playwright Chromium engine verified and ready.")
+        except Exception:
+            print("[!] Playwright Chromium driver missing. Starting automatic installation...")
+            try:
+                # Call playwright install command via subprocess
+                subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
+                print("[*] Playwright Chromium engine installed successfully!")
+            except Exception as e:
+                print(f"[x] Auto-install failed: {e}. Sandboxed previews may be disabled until run manually.")
+
+    # Run check in a background thread to prevent delaying server startup
+    from threading import Thread
+    Thread(target=check_and_install_playwright, daemon=True).start()
+
     def open_browser():
         webbrowser.open('http://127.0.0.1:5000')
         
