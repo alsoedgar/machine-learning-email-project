@@ -45,8 +45,41 @@ class EmailParser:
                 content_type = part.get_content_type()
                 content_disposition = part.get_content_disposition()
                 
+                # Check for Inline / Embedded Images first
+                if content_type.startswith('image/'):
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        cid = part.get('Content-ID')
+                        if cid:
+                            cid = cid.strip('<> \t\r\n')
+                        filename = part.get_filename()
+                        if filename:
+                            decoded_filename = ""
+                            for fn_part, encoding in email.header.decode_header(filename):
+                                if isinstance(fn_part, bytes):
+                                    decoded_filename += fn_part.decode(encoding or 'utf-8', errors='ignore')
+                                else:
+                                    decoded_filename += fn_part
+                            filename = decoded_filename
+                        else:
+                            filename = f"inline_image_{len(attachments) + 1}"
+                            
+                        sha256 = hashlib.sha256(payload).hexdigest()
+                        size = len(payload)
+                        
+                        import base64
+                        b64_content = base64.b64encode(payload).decode('utf-8')
+                        data_uri = f"data:{content_type};base64,{b64_content}"
+                        
+                        attachments.append({
+                            'filename': filename,
+                            'sha256': sha256,
+                            'size': size,
+                            'cid': cid,
+                            'data_uri': data_uri
+                        })
                 # Attachment
-                if content_disposition == 'attachment' or part.get_filename():
+                elif content_disposition == 'attachment' or part.get_filename():
                     filename = part.get_filename()
                     if filename:
                         # Decode filename
@@ -67,29 +100,6 @@ class EmailParser:
                             'filename': decoded_filename,
                             'sha256': sha256,
                             'size': size
-                        })
-                # Inline / Embedded Images
-                elif content_type.startswith('image/'):
-                    payload = part.get_payload(decode=True)
-                    if payload:
-                        cid = part.get('Content-ID')
-                        if cid:
-                            # Strip brackets: <image_cid> -> image_cid
-                            cid = cid.strip('<>')
-                        filename = part.get_filename() or f"inline_image_{len(attachments) + 1}"
-                        sha256 = hashlib.sha256(payload).hexdigest()
-                        size = len(payload)
-                        
-                        # Store base64 data URI to inline load the image safely in the preview
-                        b64_content = base64.b64encode(payload).decode('utf-8')
-                        data_uri = f"data:{content_type};base64,{b64_content}"
-                        
-                        attachments.append({
-                            'filename': filename,
-                            'sha256': sha256,
-                            'size': size,
-                            'cid': cid,
-                            'data_uri': data_uri
                         })
                 # Body texts
                 elif content_type == 'text/plain':

@@ -650,8 +650,25 @@ class EmailAnalyzer:
                         '--js-flags=--max-old-space-size=512' # Resource constraint: limit JS heap to 512MB to prevent DoS memory leaks on host OS
                     ]
                 )
-                page = browser.new_page()
-                page.set_viewport_size({"width": 1280, "height": 800})
+                context = browser.new_context(
+                    viewport={'width': 1280, 'height': 800},
+                    ignore_https_errors=True,
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                    locale='en-US',
+                    timezone_id='America/New_York'
+                )
+                context.grant_permissions([])
+                page = context.new_page()
+                
+                # Apply runtime antidetect js scripts to override navigator.webdriver parameters
+                page.add_init_script("""
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => undefined
+                    });
+                    window.chrome = {
+                        runtime: {}
+                    };
+                """)
                 
                 # Proactive Network Sandboxing: Block requests targeting private subnets
                 def handle_route(route, request):
@@ -719,15 +736,29 @@ class EmailAnalyzer:
                 )
                 
                 # Create a completely isolated browser context with zero permissions granted
+                # Hardened Stealth: Supply a normal Windows Desktop User-Agent and standard locales to prevent headless detection (Cloudflare / CAPTCHAs)
                 context = _sandbox_browser.new_context(
                     viewport={'width': 1280, 'height': 800},
-                    ignore_https_errors=True
+                    ignore_https_errors=True,
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                    locale='en-US',
+                    timezone_id='America/New_York'
                 )
                 
                 # Prevent geolocation, notification, and microphone permissions
                 context.grant_permissions([])
                 
                 _sandbox_page = context.new_page()
+                
+                # Apply runtime antidetect js scripts to override navigator.webdriver parameters
+                _sandbox_page.add_init_script("""
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => undefined
+                    });
+                    window.chrome = {
+                        runtime: {}
+                    };
+                """)
                 
                 # Proactive Network Sandboxing: Intercept all outgoing network requests on the page
                 # to completely drop traffic attempting to hit private subnets or loopback at runtime.
@@ -912,10 +943,23 @@ class EmailAnalyzer:
                 )
                 context = browser.new_context(
                     viewport={'width': 1280, 'height': 800},
-                    ignore_https_errors=True
+                    ignore_https_errors=True,
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                    locale='en-US',
+                    timezone_id='America/New_York'
                 )
                 context.grant_permissions([])
                 page = context.new_page()
+                
+                # Apply runtime antidetect js scripts to override navigator.webdriver parameters
+                page.add_init_script("""
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => undefined
+                    });
+                    window.chrome = {
+                        runtime: {}
+                    };
+                """)
                 
                 # Proactive Network Sandboxing: Intercept and abort any redirect or asset request targeting private subnets
                 def handle_route(route, request):
