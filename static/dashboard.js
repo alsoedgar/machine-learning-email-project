@@ -614,11 +614,64 @@ function displayForensics(result) {
         similarityBox.style.display = 'flex';
     }
 
-    // Populate Email Headers Display Panel
+    // Populate Email Headers Display Panel (with lag-prevention for massive recipient/sender lists)
     document.getElementById('headerSubject').textContent = result.metadata.subject || '(No Subject)';
-    document.getElementById('headerFrom').textContent = result.metadata.from || '(No Sender)';
-    document.getElementById('headerTo').textContent = result.metadata.to || '(No Recipient)';
     document.getElementById('headerDate').textContent = result.metadata.date || '(No Date)';
+
+    const formatHeaderCollapsible = (elemId, rawText) => {
+        const elem = document.getElementById(elemId);
+        elem.innerHTML = ''; // Clear previous content
+        if (!rawText) {
+            elem.textContent = '(None)';
+            return;
+        }
+
+        // Clean any double escapes or parsing anomalies
+        const cleanedText = rawText.replace(/\s+/g, ' ').trim();
+
+        if (cleanedText.length <= 160) {
+            elem.textContent = cleanedText;
+            return;
+        }
+
+        // Create collapsed state
+        const visibleSpan = document.createElement('span');
+        visibleSpan.textContent = cleanedText.slice(0, 150) + '... ';
+        
+        const fullSpan = document.createElement('span');
+        fullSpan.textContent = cleanedText;
+        fullSpan.style.display = 'none';
+
+        const toggleBtn = document.createElement('a');
+        toggleBtn.href = '#';
+        toggleBtn.textContent = `[Expand list: ${cleanedText.split(',').length} addresses]`;
+        toggleBtn.style.fontSize = '0.72rem';
+        toggleBtn.style.color = 'var(--primary)';
+        toggleBtn.style.marginLeft = '0.5rem';
+        toggleBtn.style.textDecoration = 'none';
+        toggleBtn.style.fontWeight = '600';
+        toggleBtn.style.cursor = 'pointer';
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (fullSpan.style.display === 'none') {
+                fullSpan.style.display = 'inline';
+                visibleSpan.style.display = 'none';
+                toggleBtn.textContent = '[Collapse list]';
+            } else {
+                fullSpan.style.display = 'none';
+                visibleSpan.style.display = 'inline';
+                toggleBtn.textContent = `[Expand list: ${cleanedText.split(',').length} addresses]`;
+            }
+        });
+
+        elem.appendChild(visibleSpan);
+        elem.appendChild(fullSpan);
+        elem.appendChild(toggleBtn);
+    };
+
+    formatHeaderCollapsible('headerFrom', result.metadata.from);
+    formatHeaderCollapsible('headerTo', result.metadata.to);
 
     // Highlight and Annotate Email Body
     const fullBody = result.metadata.body_text || result.metadata.body_html || '';

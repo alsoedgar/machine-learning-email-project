@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import csv
 import threading
@@ -84,7 +85,11 @@ def _sandbox_screenshot():
 
 def get_seed_dataset():
     """Loads the 42 bootstrapping email training templates from JSON."""
-    seed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "seed_dataset.json")
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    seed_path = os.path.join(base_path, "data", "seed_dataset.json")
     try:
         with open(seed_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -107,7 +112,12 @@ class EmailAnalyzer:
     """The unified analyzer combining email parsing, heuristics, and Naive Bayes ML."""
     def __init__(self, model_dir=None):
         if model_dir is None:
-            model_dir = os.path.dirname(os.path.abspath(__file__))
+            try:
+                # Use PyInstaller's extracted temporary folder if packaged
+                model_dir = sys._MEIPASS
+            except Exception:
+                model_dir = os.path.dirname(os.path.abspath(__file__))
+                
         self.model_path = os.path.join(model_dir, "model_state.json")
         self.feedback_csv_path = os.path.join(model_dir, "feedback_log.csv")
         self.whitelist_path = os.path.join(model_dir, "whitelisted_senders.json")
