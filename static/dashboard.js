@@ -682,7 +682,18 @@ function displayForensics(result) {
 
 // JS Text Highlighter and Annotator
 function annotateText(text, result) {
-    let escaped = escapeHtml(text);
+    if (!text) return "(Empty Body)";
+    
+    // Performance optimization: Truncate display annotation for extremely long emails to prevent UI freeze
+    const maxRenderLength = 10000;
+    let isTruncated = false;
+    let workingText = text;
+    if (text.length > maxRenderLength) {
+        workingText = text.slice(0, maxRenderLength);
+        isTruncated = true;
+    }
+    
+    let escaped = escapeHtml(workingText);
     
     const links = result.heuristics.defanged_links || [];
     links.forEach(l => {
@@ -715,7 +726,11 @@ function annotateText(text, result) {
         });
     });
 
-    return escaped || "(Empty Body)";
+    if (isTruncated) {
+        escaped += `\n\n<div style="padding: 0.5rem; background: var(--warning-bg); color: var(--warning-color); border-radius: 4px; font-size: 0.72rem; font-weight: 600; text-align: center; border: 1px dashed var(--warning-color);">[Display truncated to first 10,000 characters to prevent browser lag]</div>`;
+    }
+
+    return escaped;
 }
 
 // Absolute global tooltip mouse tracking logic
