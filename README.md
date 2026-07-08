@@ -207,3 +207,21 @@ To package this folder for teammates:
    - `feedback_log.csv` (contains records of emails you have flagged)
    - `model_state.json` (holds your local trained vocabulary)
 2. **Regeneration:** When the recipient runs the code, it will automatically train a fresh model file from the seed dataset.
+
+---
+
+## ⚠️ Important Security Best Practices
+
+### 1. Phishing via Visual Mimicry (Analyst Warning)
+While the backend environment and browser processes are fully sandboxed, **your eyes are not**. If you open a suspicious link in Live Mode, a highly accurate spoof of a login page (e.g., a Microsoft 365 or Google sign-in form) can still be rendered in the screenshot. 
+> [!WARNING]
+> **Never type real user credentials** (passwords, 2FA codes, access tokens) into the interactive sandbox text field. Treat all loaded sites as malicious and inspect them visually only.
+
+### 2. Enforcing Container Disposability
+Precautionary lifecycles kill the browser threads, but if an advanced exploit successfully escapes Chromium to write artifacts to the container's temporary filesystem, these files can persist as long as the container runs.
+> [!TIP]
+> Periodically reset the container to a clean slate to destroy any persistent session changes. Run the following command in your terminal:
+> ```powershell
+> docker-compose down --volumes && docker-compose up -d --build
+> ```
+
