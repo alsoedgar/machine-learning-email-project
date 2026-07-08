@@ -411,6 +411,17 @@ def api_sandbox_stop():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+@app.route('/api/sandbox/scroll', methods=['POST'])
+@csrf.exempt
+def api_sandbox_scroll():
+    try:
+        data = request.get_json(force=True)
+        direction = data.get('direction', 'down')
+        result = analyzer.scroll_sandbox(direction)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
 @app.route('/api/shutdown', methods=['POST'])
 @csrf.exempt
 def api_shutdown():

@@ -830,6 +830,25 @@ class EmailAnalyzer:
             except Exception as e:
                 return {'status': 'error', 'message': f'Navigate failed: {str(e)}'}
 
+    def scroll_sandbox(self, direction):
+        """Scroll the sandbox window up or down, return updated screenshot."""
+        global _sandbox_current_url
+        with _sandbox_lock:
+            if _sandbox_page is None:
+                return {'status': 'error', 'message': 'No active sandbox session.'}
+            try:
+                # Scroll by viewport height increments (e.g. 500px)
+                scroll_y = 500 if direction == 'down' else -500
+                _sandbox_page.evaluate(f"window.scrollBy({{ top: {scroll_y}, behavior: 'auto' }})")
+                _sandbox_page.wait_for_timeout(400)
+                _sandbox_current_url = _sandbox_page.url
+                return {'status': 'success', 'image': _sandbox_screenshot(), 'current_url': _sandbox_current_url}
+            except Exception as e:
+                err_msg = str(e)
+                if "different thread" in err_msg:
+                    return {'status': 'error', 'message': 'Sandbox thread boundary interrupted. Please close the preview and reopen it.'}
+                return {'status': 'error', 'message': f'Scroll failed: {err_msg}'}
+
     def stop_sandbox(self):
         """Terminate the live browser session and release resources."""
         with _sandbox_lock:

@@ -574,15 +574,34 @@ function displayForensics(result) {
     const iocHashesList = document.getElementById('iocHashesList');
     const iocAttachmentsGroup = document.getElementById('iocAttachmentsGroup');
     iocHashesList.innerHTML = '';
-    const attachments = result.metadata.attachments || [];
+    const attachments = result.attachments || result.metadata.attachments || [];
     if (attachments.length === 0) {
         iocAttachmentsGroup.style.display = 'none';
     } else {
-        iocAttachmentsGroup.style.display = 'flex';
+        iocAttachmentsGroup.style.display = 'block';
         attachments.forEach(att => {
             const div = document.createElement('div');
-            div.style.padding = '0.2rem 0';
-            div.textContent = `${att.filename} (SHA-256: ${att.sha256})`;
+            div.style.padding = '0.35rem 0';
+            div.style.borderBottom = '1px solid var(--border-light)';
+            div.style.display = 'flex';
+            div.style.flexDirection = 'column';
+            div.style.gap = '0.2rem';
+            
+            const fileSpan = document.createElement('span');
+            fileSpan.style.fontWeight = '600';
+            fileSpan.style.fontSize = '0.78rem';
+            fileSpan.style.color = 'var(--text-main)';
+            fileSpan.textContent = att.filename;
+            
+            const shaSpan = document.createElement('span');
+            shaSpan.style.fontFamily = "'JetBrains Mono', monospace";
+            shaSpan.style.fontSize = '0.7rem';
+            shaSpan.style.color = 'var(--text-muted)';
+            shaSpan.style.wordBreak = 'break-all';
+            shaSpan.textContent = `SHA-256: ${att.sha256}`;
+            
+            div.appendChild(fileSpan);
+            div.appendChild(shaSpan);
             iocHashesList.appendChild(div);
         });
     }
@@ -1473,6 +1492,12 @@ function renderLiveSandbox(imageData, currentUrl) {
                 <button class="sandbox-nav-btn" id="sbForward" title="Forward">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
+                <button class="sandbox-nav-btn" id="sbScrollUp" title="Scroll Up">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
+                <button class="sandbox-nav-btn" id="sbScrollDown" title="Scroll Down">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
                 <input type="text" class="sandbox-url-bar" id="sandboxUrlBar"
                        value="${escapeHtml(currentUrl)}" placeholder="Enter URL…">
                 <button class="sandbox-go-btn" id="sbGo">Go</button>
@@ -1495,7 +1520,7 @@ function renderLiveSandbox(imageData, currentUrl) {
         <div class="sandbox-live-footer">
             <span class="sandbox-live-badge">● LIVE</span>
             <span style="font-size:0.7rem;color:var(--text-muted);">
-                Click the image to interact · Type below · All traffic is sandboxed
+                Click the image to interact · Type below · Scroll via toolbar buttons · All traffic is sandboxed
             </span>
         </div>`;
 
@@ -1519,6 +1544,12 @@ function attachLiveSandboxListeners() {
         () => sandboxAction('/api/sandbox/key', { key: 'Alt+ArrowLeft' }, overlay, img));
     document.getElementById('sbForward').addEventListener('click',
         () => sandboxAction('/api/sandbox/key', { key: 'Alt+ArrowRight' }, overlay, img));
+
+    // ── Scroll buttons ──
+    document.getElementById('sbScrollUp').addEventListener('click',
+        () => sandboxAction('/api/sandbox/scroll', { direction: 'up' }, overlay, img));
+    document.getElementById('sbScrollDown').addEventListener('click',
+        () => sandboxAction('/api/sandbox/scroll', { direction: 'down' }, overlay, img));
 
     // ── URL bar ──
     const urlBar = document.getElementById('sandboxUrlBar');

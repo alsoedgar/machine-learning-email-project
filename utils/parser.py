@@ -68,6 +68,29 @@ class EmailParser:
                             'sha256': sha256,
                             'size': size
                         })
+                # Inline / Embedded Images
+                elif content_type.startswith('image/'):
+                    payload = part.get_payload(decode=True)
+                    if payload:
+                        cid = part.get('Content-ID')
+                        if cid:
+                            # Strip brackets: <image_cid> -> image_cid
+                            cid = cid.strip('<>')
+                        filename = part.get_filename() or f"inline_image_{len(attachments) + 1}"
+                        sha256 = hashlib.sha256(payload).hexdigest()
+                        size = len(payload)
+                        
+                        # Store base64 data URI to inline load the image safely in the preview
+                        b64_content = base64.b64encode(payload).decode('utf-8')
+                        data_uri = f"data:{content_type};base64,{b64_content}"
+                        
+                        attachments.append({
+                            'filename': filename,
+                            'sha256': sha256,
+                            'size': size,
+                            'cid': cid,
+                            'data_uri': data_uri
+                        })
                 # Body texts
                 elif content_type == 'text/plain':
                     payload = part.get_payload(decode=True)
@@ -84,8 +107,30 @@ class EmailParser:
             if payload:
                 if content_type == 'text/html':
                     body_html = payload.decode(charset, errors='ignore')
+                elif content_type.startswith('image/'):
+                    # Single-part inline image
+                    cid = msg.get('Content-ID', '').strip('<>')
+                    filename = msg.get_filename() or "inline_image_1"
+                    sha256 = hashlib.sha256(payload).hexdigest()
+                    b64_content = base64.b64encode(payload).decode('utf-8')
+                    data_uri = f"data:{content_type};base64,{b64_content}"
+                    attachments.append({
+                        'filename': filename,
+                        'sha256': sha256,
+                        'size': len(payload),
+                        'cid': cid,
+                        'data_uri': data_uri
+                    })
                 else:
                     body_text = payload.decode(charset, errors='ignore')
+                    
+        # Replace Content-ID (cid:...) references in HTML with local base64 Data URIs
+        if body_html:
+            for att in attachments:
+                if 'cid' in att and att['cid'] and 'data_uri' in att:
+                    # Match both cid:name and cid:<name>
+                    body_html = body_html.replace(f"cid:{att['cid']}", att['data_uri'])
+                    body_html = body_html.replace(f"cid:<{att['cid']}>", att['data_uri'])
                     
         # Extract links from text and html
         links = EmailParser.extract_links(body_text, body_html)
