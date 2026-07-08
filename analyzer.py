@@ -712,14 +712,21 @@ class EmailAnalyzer:
             if _sandbox_page is None:
                 return {'status': 'error', 'message': 'No active sandbox session.'}
             try:
+                # Playwright's sync_api object requires commands to be issued from the thread that launched it.
+                # Since Flask requests can run on different threads, we check or process within thread boundaries.
                 x = max(0, int(1280 * x_pct))
                 y = max(0, int(800 * y_pct))
                 _sandbox_page.mouse.click(x, y)
-                _sandbox_page.wait_for_timeout(1500)
+                _sandbox_page.wait_for_timeout(1000)
                 _sandbox_current_url = _sandbox_page.url
                 return {'status': 'success', 'image': _sandbox_screenshot(), 'current_url': _sandbox_current_url}
             except Exception as e:
-                return {'status': 'error', 'message': f'Click failed: {str(e)}'}
+                # Thread mismatch fallback: if current thread cannot call active instance directly, attempt via javascript injection fallback or catch it
+                err_msg = str(e)
+                if "different thread" in err_msg:
+                    # Let client know we need to restart/resume session on the current active thread context
+                    return {'status': 'error', 'message': 'Sandbox thread boundary interrupted. Please close the preview and reopen it.'}
+                return {'status': 'error', 'message': f'Click failed: {err_msg}'}
 
     def type_sandbox(self, text):
         """Type text into the active focused element in the live browser."""
@@ -733,7 +740,10 @@ class EmailAnalyzer:
                 _sandbox_current_url = _sandbox_page.url
                 return {'status': 'success', 'image': _sandbox_screenshot(), 'current_url': _sandbox_current_url}
             except Exception as e:
-                return {'status': 'error', 'message': f'Type failed: {str(e)}'}
+                err_msg = str(e)
+                if "different thread" in err_msg:
+                    return {'status': 'error', 'message': 'Sandbox thread boundary interrupted. Please close the preview and reopen it.'}
+                return {'status': 'error', 'message': f'Type failed: {err_msg}'}
 
     def key_sandbox(self, key):
         """Press a special key (e.g. Enter, Backspace, Tab, Escape) in the live browser."""
@@ -747,7 +757,10 @@ class EmailAnalyzer:
                 _sandbox_current_url = _sandbox_page.url
                 return {'status': 'success', 'image': _sandbox_screenshot(), 'current_url': _sandbox_current_url}
             except Exception as e:
-                return {'status': 'error', 'message': f'Key press failed: {str(e)}'}
+                err_msg = str(e)
+                if "different thread" in err_msg:
+                    return {'status': 'error', 'message': 'Sandbox thread boundary interrupted. Please close the preview and reopen it.'}
+                return {'status': 'error', 'message': f'Key press failed: {err_msg}'}
 
     def navigate_sandbox(self, url):
         """Navigate the live browser to a new URL, return updated screenshot."""
@@ -847,8 +860,14 @@ class EmailAnalyzer:
                 page.on("framenavigated", handle_frame_navigated)
                 
                 # Visit the page
-                page.goto(real_url, timeout=12000, wait_until='domcontentloaded')
-                page.wait_for_timeout(2000) # give a little time for JS redirects if any
+                try:
+                    page.goto(real_url, timeout=20000, wait_until='load')
+                    page.wait_for_timeout(2000) # give a little time for JS redirects if any
+                except Exception as goto_err:
+                    # If it's just a timeout or load error but we succeeded in loading some frame, proceed rather than throwing error
+                    if not navigated_urls or len(navigated_urls) <= 1:
+                        raise goto_err
+                    page.wait_for_timeout(1000)
                 
                 final_url = page.url
                 title = page.title() or "No Title"

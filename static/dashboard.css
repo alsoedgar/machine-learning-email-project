@@ -972,21 +972,28 @@ textarea:focus {
 }
 
 .modal-close {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-light);
     cursor: pointer;
-    color: var(--text-muted);
+    color: var(--text-main);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.25rem;
-    border-radius: 4px;
-    transition: background-color 0.2s, color 0.2s;
+    padding: 0.35rem;
+    border-radius: 6px;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+body.dark-theme .modal-close {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
 .modal-close:hover {
-    background: var(--primary-light);
-    color: var(--text-main);
+    background: var(--primary);
+    color: #ffffff !important;
+    border-color: var(--primary);
 }
 
 .modal-body {
@@ -1227,17 +1234,25 @@ textarea:focus {
     align-items: center;
     gap: 0.35rem;
     background: var(--primary);
-    color: #fff;
-    border: none;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
-    padding: 0.3rem 0.7rem;
+    padding: 0.4rem 0.8rem;
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.15s;
+    transition: background-color 0.2s, opacity 0.15s;
 }
 
-.sandbox-golive-btn:hover { opacity: 0.85; }
+body.dark-theme .sandbox-golive-btn {
+    background: #1e70eb !important; /* brighter blue for high contrast in dark mode */
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sandbox-golive-btn:hover {
+    opacity: 0.9;
+    background: #1557b7 !important;
+}
 
 /* Live-mode footer strip */
 .sandbox-live-footer {

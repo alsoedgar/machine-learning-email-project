@@ -475,4 +475,4 @@ if __name__ == '__main__':
     print(f"================================================================")
     
     Timer(1.2, open_browser).start()
-    app.run(host='127.0.0.1', port=5000, debug=False)
+    app.run(host='127.0.0.1', port=5000, debug=False, threaded=False)
