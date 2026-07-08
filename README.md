@@ -39,14 +39,32 @@ Unlike cloud-based security products, Email Assessor is designed with privacy an
 
 To inspect links safely, the application launches a headless Chromium instance using **Playwright**. To ensure that visiting malicious links cannot compromise your host machine, local network, or browser, we enforce strict security configurations across both static tracing and the **Live Interactive Sandbox**:
 
-* **1. Intranet & DNS Rebinding Protection (SSRF Prevention):** The backend resolves any target domain to its IP address via DNS *before* launching the browser or executing navigations. If the host resolves to a private network, loopback, or local subnet (`127.0.0.1`, `localhost`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`), the request is immediately rejected. This prevents a malicious link from executing Server-Side Request Forgery (SSRF) or DNS rebinding to probe local network services.
-* **2. Execution Process Isolation:** Chromium runs as an unprivileged, headless background process. It does not share cookies, session tokens, login history, cache, or credentials with your default web browser.
-* **3. Zero Client-Side Script Execution (Base64 Proxy Delivery):** When you interact with a page in **Live Mode**, the target website's scripts and code *never* reach your browser. Your mouse clicks are translated into coordinates, sent to the server as API requests, and executed by Playwright. The server returns a clean base64-encoded PNG screenshot of the updated state. No malicious payloads, drive-by downloads, or scripts can execute on your local device.
-* **4. Stripped Device & Sensor Permissions:** All active device integrations are completely disabled:
+* **1. Intranet & DNS Rebinding Protection (SSRF Prevention):** The backend resolves any target domain to its IP address via DNS *before* launching the browser or executing navigations. If the host resolves to a private network, loopback, or local subnet (`127.0.0.1`, `localhost`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`), the request is immediately rejected.
+* **2. Docker Gateway & WSL2 Bypass Blockers:** To prevent malicious scripts from exploiting host-only bridge networks (such as Docker WSL2 instances on Windows), the analyzer explicitly blocks traffic targeting Docker internal host interfaces (`host.docker.internal`, `gateway.docker.internal`, and `host.wsl`).
+* **3. Execution Process Isolation & Active Sandboxing:** Chromium runs with the native browser sandbox fully enabled (do NOT run with `--no-sandbox` flags). It does not share cookies, session tokens, login history, cache, or credentials with your default web browser.
+* **4. Resource & Memory Caps (DoS Mitigation):** Chromium launch configurations are restricted with strict memory controls (`--js-flags="--max-old-space-size=512"`). This caps the browser's JavaScript engine heap at **512MB RAM**, preventing crash-loops, Canvas leaks, or infinite resource leaks from locking up your host operating system.
+* **5. Zero Client-Side Script Execution (Base64 Proxy Delivery):** When you interact with a page in **Live Mode**, the target website's scripts and code *never* reach your browser. Your mouse clicks are translated into coordinates, sent to the server as API requests, and executed by Playwright. The server returns a clean base64-encoded PNG screenshot of the updated state. No malicious payloads, drive-by downloads, or scripts can execute on your local device.
+* **6. Stripped Device & Sensor Permissions:** All active device integrations are completely disabled:
   * Camera, Microphone, and Midi Access: Blocked.
   * Geolocation, Push Notifications, and Clipboard: Blocked.
-* **5. Escape & Popup Prevention:** Chromium launches with `--block-new-web-contents` enabled, which automatically catches and kills any script attempts to spawn popups, new tabs, prompt dialogs, or frame escapes.
-* **6. Volatile Session Lifecycles:** When you close the sandbox modal, the backend kills the Playwright instance, instantly destroying the browser context, session memory, local storage, and volatile cache.
+* **7. Escape & Popup Prevention:** Chromium launches with `--block-new-web-contents` and `--mute-audio` enabled, which automatically catches and kills any script attempts to spawn popups, new tabs, prompt dialogs, audio alerts, or frame escapes.
+* **8. Volatile Session Lifecycles:** When you close the sandbox modal, the backend kills the Playwright instance, instantly destroying the browser context, session memory, local storage, and volatile cache.
+
+---
+
+## 🐋 Hardened Container Deployment (Docker Sandbox)
+
+For maximum isolation when inspecting untrusted link inputs, the repository includes a multi-layered Docker sandboxing wrapper to shield your host Windows OS from Zero-Day browser vulnerabilities:
+
+1. **Non-Root Execution context:** The application runs inside the container as a dedicated unprivileged user (`USER appuser`, UID `10001`), preventing container-escape exploits from writing to your host OS files.
+2. **CPU & Memory Quotas:** Resource consumption is capped strictly to **1.5 CPU cores** and **1GB RAM** to mitigate host system freezing during crash loop attacks.
+3. **LAN Port Lockdown:** Web interface binding is locked to the loopback interface (`127.0.0.1:5000`) on the host machine, preventing external LAN probing.
+
+To launch the isolated container setup:
+```powershell
+docker-compose up --build -d
+```
+The application will be available securely at: 👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
 ---
 

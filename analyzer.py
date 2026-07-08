@@ -47,6 +47,7 @@ def _undefang_url(url):
 def _is_safe_destination_url(url):
     """
     Validates that a URL does not point to the loopback address or private intranet subnets.
+    Also blocks specific Docker host gateway domains (e.g. host.docker.internal) to isolate Windows host services.
     Performs DNS resolution to catch DNS rebinding attempts.
     """
     try:
@@ -60,9 +61,15 @@ def _is_safe_destination_url(url):
         if not hostname:
             return False
             
-        # 1. Check string patterns
+        # 1. Check string patterns (including loopbacks, private subnets, and Docker host loops)
         lower_host = hostname.lower()
-        local_patterns = ['localhost', '127.0.0.1', '192.168.', '10.', '172.16.', '172.17.', '172.18.', '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', '172.30.', '172.31.', '[::1]']
+        local_patterns = [
+            'localhost', '127.0.0.1', '192.168.', '10.', '172.16.', '172.17.', 
+            '172.18.', '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', 
+            '172.24.', '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', 
+            '172.30.', '172.31.', '[::1]', 'host.docker.internal', 
+            'gateway.docker.internal', 'host.wsl'
+        ]
         if any(p in lower_host for p in local_patterns) or '.local' in lower_host:
             return False
             
@@ -633,9 +640,31 @@ class EmailAnalyzer:
         
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
+                browser = p.chromium.launch(
+                    headless=True,
+                    args=[
+                        '--disable-gpu',
+                        '--disable-dev-shm-usage',
+                        '--block-new-web-contents',
+                        '--mute-audio',
+                        '--js-flags=--max-old-space-size=512' # Resource constraint: limit JS heap to 512MB to prevent DoS memory leaks on host OS
+                    ]
+                )
                 page = browser.new_page()
                 page.set_viewport_size({"width": 1280, "height": 800})
+                
+                # Proactive Network Sandboxing: Block requests targeting private subnets
+                def handle_route(route, request):
+                    try:
+                        req_url = request.url
+                        if not _is_safe_destination_url(req_url):
+                            route.abort("blockedbyclient")
+                        else:
+                            route.continue_()
+                    except Exception:
+                        route.abort("failed")
+                        
+                page.route("**/*", handle_route)
                 
                 # Navigate with a strict 7-second timeout
                 page.goto(real_url, timeout=7000, wait_until="load")
@@ -677,14 +706,15 @@ class EmailAnalyzer:
             self._stop_sandbox_internal()
             try:
                 _sandbox_pw = sync_playwright().start()
-                # Isolated Execution: Disable sandbox bypass triggers, keep strict browser arguments
+                # Isolated Execution: Ensure Chromium Sandbox is fully active (do NOT use --no-sandbox)
                 _sandbox_browser = _sandbox_pw.chromium.launch(
                     headless=True,
                     args=[
                         '--disable-gpu',
                         '--disable-dev-shm-usage',
-                        '--no-sandbox',  # Runs under standard chromium security sandbox inside headless
-                        '--block-new-web-contents' # Prevent popups / tabs escape
+                        '--block-new-web-contents', # Prevent popups / tabs escape
+                        '--mute-audio',
+                        '--js-flags=--max-old-space-size=512' # Resource constraint: limit JS heap to 512MB to prevent DoS memory leaks on host OS
                     ]
                 )
                 
@@ -698,6 +728,23 @@ class EmailAnalyzer:
                 context.grant_permissions([])
                 
                 _sandbox_page = context.new_page()
+                
+                # Proactive Network Sandboxing: Intercept all outgoing network requests on the page
+                # to completely drop traffic attempting to hit private subnets or loopback at runtime.
+                # This mitigates HTTP/2 tunnels, multi-step redirects, or WebSockets targeting localhost.
+                def handle_route(route, request):
+                    try:
+                        req_url = request.url
+                        if not _is_safe_destination_url(req_url):
+                            print(f"[!] Blocked suspicious intranet request in sandbox: {req_url}")
+                            route.abort("blockedbyclient")
+                        else:
+                            route.continue_()
+                    except Exception:
+                        route.abort("failed")
+                        
+                _sandbox_page.route("**/*", handle_route)
+                
                 _sandbox_page.goto(real_url, timeout=15000, wait_until='domcontentloaded')
                 _sandbox_current_url = _sandbox_page.url
                 return {'status': 'success', 'image': _sandbox_screenshot(), 'current_url': _sandbox_current_url}
@@ -839,8 +886,9 @@ class EmailAnalyzer:
                     args=[
                         '--disable-gpu',
                         '--disable-dev-shm-usage',
-                        '--no-sandbox',
-                        '--block-new-web-contents'
+                        '--block-new-web-contents',
+                        '--mute-audio',
+                        '--js-flags=--max-old-space-size=512' # Resource constraint: limit JS heap to 512MB to prevent DoS memory leaks on host OS
                     ]
                 )
                 context = browser.new_context(
@@ -849,6 +897,19 @@ class EmailAnalyzer:
                 )
                 context.grant_permissions([])
                 page = context.new_page()
+                
+                # Proactive Network Sandboxing: Intercept and abort any redirect or asset request targeting private subnets
+                def handle_route(route, request):
+                    try:
+                        req_url = request.url
+                        if not _is_safe_destination_url(req_url):
+                            route.abort("blockedbyclient")
+                        else:
+                            route.continue_()
+                    except Exception:
+                        route.abort("failed")
+                        
+                page.route("**/*", handle_route)
                 
                 # Listen to frame navigated events to build our redirect chain
                 def handle_frame_navigated(frame):

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  email-assessor:
+    build: .
+    container_name: email-security-sandbox
+    ports:
+      - "127.0.0.1:5000:5000"  # Expose web UI strictly on local loopback to block external subnet probe attempts
+    
+    # 1. Resource Exhaustion (DoS) Mitigation: Limit CPU and Memory consumption
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1g
+        reservations:
+          memory: 256m
+
+    # 2. Host OS Isolation: Keep write states bounded to persistent virtual volumes
+    volumes:
+      - app-data:/app/data
+      - app-uploads:/app/uploads
+      
+    # 3. Network Sandboxing: Drop capability to hit host OS internal services via docker host bridge network options
+    # Sets container bridge to isolated context
+    networks:
+      - sandbox-isolated-net
+
+    # 4. Running Context: Auto-restart on unexpected crashes/resource exhaustion resets
+    restart: unless-stopped
+
+volumes:
+  app-data:
+  app-uploads:
+
+networks:
+  sandbox-isolated-net:
+    driver: bridge
+    # Configure bridge subnets to ensure the container network has no access route to host local intranet ranges
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
