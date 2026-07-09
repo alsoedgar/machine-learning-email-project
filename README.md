@@ -209,13 +209,16 @@ docker compose up --build -d
 
 If you just want to use the app without installing anything:
 
-1. Go to the [**Releases**](../../releases) page of this repository.
-2. Download **`EmailAssessor.exe`** (Windows) from the latest release.
-3. Double-click `EmailAssessor.exe` — the app will start automatically and open in its own dedicated Chromium window.
+* **Windows:**
+  1. Go to the [**Releases**](../../releases) page of this repository.
+  2. Download **`EmailAssessor.exe`** (Windows) from the latest release.
+  3. Double-click `EmailAssessor.exe` — the app will start automatically and open in its own dedicated Chromium window.
+  
+  > **Note:** On first launch Windows may show a SmartScreen warning since the app is unsigned. Click **"More info" → "Run anyway"** to proceed.
 
-> **Note:** On first launch Windows may show a SmartScreen warning since the app is unsigned. Click **"More info" → "Run anyway"** to proceed. The app runs entirely locally and makes no external connections.
-
-> **Note:** The EXE opens in its own embedded Chromium browser window — not your default browser (Edge, Brave, Firefox). If Chromium hasn't been installed yet, the app will install it automatically in the background on first launch.
+* **macOS:**
+  * The prebuilt `.exe` is a Windows binary and will not run natively on macOS. 
+  * Mac users should use **Option 1 (Docker)** or **Option 3 (Source)**. Alternatively, you can follow the instructions in the [Building the Executable Yourself](#-building-the-executable-yourself) section below to compile a native Mac `EmailAssessor.app` bundle in seconds.
 
 ---
 
@@ -226,23 +229,33 @@ If you want to run the full web app with all features from the source:
 #### Prerequisites
 - **Python 3.10+** must be installed on your computer.
 
-```powershell
-# 1. Clone or download this repository, then open a terminal in the project folder
+* **Windows (PowerShell):**
+  ```powershell
+  # 1. Clone/download the repo and open terminal in the project folder
+  # 2. Create and activate a virtual environment
+  python -m venv .venv
+  .\.venv\Scripts\activate
+  # 3. Install requirements
+  pip install -r requirements.txt
+  # 4. Install Playwright browser
+  playwright install chromium
+  # 5. Start the server
+  python web_app.py
+  ```
 
-# 2. Create and activate a virtual environment
-python -m venv .venv
-.\.venv\Scripts\activate        # Windows
-# source .venv/bin/activate     # Mac / Linux
-
-# 3. Install all dependencies
-pip install -r requirements.txt
-
-# 4. Install Playwright's Chromium browser (required for link tracing)
-playwright install chromium
-
-# 5. Launch the dashboard
-python web_app.py
-```
+* **macOS / Linux (Bash/Zsh):**
+  ```bash
+  # 1. Clone/download the repo and open terminal in the project folder
+  # 2. Create and activate a virtual environment
+  python3 -m venv .venv
+  source .venv/bin/activate
+  # 3. Install requirements
+  pip install -r requirements.txt
+  # 4. Install Playwright browser
+  playwright install chromium
+  # 5. Start the server
+  python3 web_app.py
+  ```
 
 The app will automatically open in its own Chromium window at 👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
@@ -252,13 +265,14 @@ The app will automatically open in its own Chromium window at 👉 **[http://127
 
 If you prefer a terminal-based workflow, the CLI provides the same full analysis without a browser:
 
-```powershell
-# Analyze by pasting/typing email content interactively:
-python cli.py
-
-# Analyze a saved .eml file directly:
-python cli.py -f "path/to/your/email.eml"
-```
+* **Windows:**
+  ```powershell
+  python cli.py -f "path/to/your/email.eml"
+  ```
+* **macOS / Linux:**
+  ```bash
+  python3 cli.py -f "path/to/your/email.eml"
+  ```
 
 The CLI outputs a color-coded security report with verdict, indicators, defanged links, and origin IP routing.
 
@@ -277,23 +291,34 @@ To clarify this and prevent analyst confusion, the application:
 
 ## 🏗️ Building the Executable Yourself
 
-If you want to compile your own `EmailAssessor.exe` from source:
+If you want to compile your own standalone application from source:
 
-```powershell
-# Install PyInstaller
-pip install pyinstaller
+* **Windows:**
+  ```powershell
+  pip install pyinstaller
+  pyinstaller --noconfirm --onefile --windowed `
+    --add-data "templates;templates" `
+    --add-data "static;static" `
+    --add-data "data;data" `
+    --icon="static/icon.ico" `
+    --name="EmailAssessor" `
+    web_app.py
+  ```
+  The output will be `dist/EmailAssessor.exe`.
 
-# Build the single-file executable
-pyinstaller --noconfirm --onefile --windowed `
-  --add-data "templates;templates" `
-  --add-data "static;static" `
-  --add-data "data;data" `
-  --icon="static/icon.ico" `
-  --name="EmailAssessor" `
-  web_app.py
-```
-
-The compiled executable will appear in the `dist/` folder.
+* **macOS:**
+  ```bash
+  pip install pyinstaller
+  # Note the colon (:) separator instead of semicolon (;) for macOS data paths
+  pyinstaller --noconfirm --onefile --windowed \
+    --add-data "templates:templates" \
+    --add-data "static:static" \
+    --add-data "data:data" \
+    --icon="static/icon.png" \
+    --name="EmailAssessor" \
+    web_app.py
+  ```
+  The output will be a standalone Mac application at `dist/EmailAssessor.app`.
 
 ---
 
