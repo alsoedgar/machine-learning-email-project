@@ -118,30 +118,52 @@ def get_seed_dataset():
 class EmailAnalyzer:
     """The unified analyzer combining email parsing, heuristics, and Naive Bayes ML."""
     def __init__(self, model_dir=None):
+        try:
+            is_frozen = getattr(sys, 'frozen', False)
+            assets_dir = sys._MEIPASS if is_frozen else os.path.dirname(os.path.abspath(__file__))
+        except Exception:
+            assets_dir = os.path.dirname(os.path.abspath(__file__))
+
         if model_dir is None:
-            try:
-                # Use PyInstaller's extracted temporary folder if packaged
-                model_dir = sys._MEIPASS
-            except Exception:
+            if getattr(sys, 'frozen', False):
+                # Write to the directory of the executable for portability
+                model_dir = os.path.dirname(sys.executable)
+            else:
                 model_dir = os.path.dirname(os.path.abspath(__file__))
                 
         self.model_path = os.path.join(model_dir, "model_state.json")
         self.feedback_csv_path = os.path.join(model_dir, "feedback_log.csv")
         self.whitelist_path = os.path.join(model_dir, "whitelisted_senders.json")
         
+        # Bundled assets fallback paths
+        self.assets_model_path = os.path.join(assets_dir, "model_state.json")
+        self.assets_whitelist_path = os.path.join(assets_dir, "whitelisted_senders.json")
+        
         self.classifier = NaiveBayesClassifier()
         self.whitelisted_domains = set()
         self.load_whitelist()
         
-        if not self.classifier.load(self.model_path):
+        # Load writable model state first, fallback to read-only assets
+        loaded = self.classifier.load(self.model_path)
+        if not loaded:
+            loaded = self.classifier.load(self.assets_model_path)
+            
+        if not loaded:
             emails, labels = get_seed_dataset()
             self.classifier.train(emails, labels)
-            self.classifier.save(self.model_path)
+            try:
+                self.classifier.save(self.model_path)
+            except Exception as e:
+                print(f"[!] Warning: Could not save model state: {e}")
             
         self.hybrid_classifier = HybridPhishingClassifier(self.classifier)
 
     def load_whitelist(self):
-        if not os.path.exists(self.whitelist_path):
+        read_path = self.whitelist_path
+        if not os.path.exists(read_path) and os.path.exists(self.assets_whitelist_path):
+            read_path = self.assets_whitelist_path
+            
+        if not os.path.exists(read_path):
             # Outlook infrastructure and Microsoft/Google safe defaults
             default_whitelist = ["outlook.com", "microsoft.com", "google.com", "gmail.com"]
             try:
@@ -152,7 +174,7 @@ class EmailAnalyzer:
             self.whitelisted_domains = set(default_whitelist)
         else:
             try:
-                with open(self.whitelist_path, 'r', encoding='utf-8') as f:
+                with open(read_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.whitelisted_domains = set(data)
             except Exception:

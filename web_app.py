@@ -46,15 +46,21 @@ limiter = Limiter(
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-# Define the upload folder
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+# Define the write directory (EXE folder if frozen, script folder if running from source)
+if getattr(sys, 'frozen', False):
+    write_base_dir = os.path.dirname(sys.executable)
+else:
+    write_base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Define the upload folder in a writable directory
+UPLOAD_FOLDER = os.path.join(write_base_dir, 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Create the upload folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Initialize the Email Analyzer
-analyzer = EmailAnalyzer()
+# Initialize the Email Analyzer with the writable directory path
+analyzer = EmailAnalyzer(model_dir=write_base_dir)
 
 # Fix: Initialize global request counts to resolve "request_counts is not defined"
 request_counts = defaultdict(int)
@@ -536,8 +542,8 @@ if __name__ == '__main__':
         This deliberately bypasses the OS default browser (Brave, Edge, Firefox, etc.)
         so the app always runs inside its own controlled Chromium environment.
         
-        NEVER calls webbrowser.open() — if Chromium isn't available, it simply
-        prints the URL to the terminal and lets the user open it themselves.
+        Falls back to the system default browser only when Chromium is not installed,
+        so the user always sees *something* open — especially important on first launch.
         """
         chromium_path = _find_chromium_executable()
         
@@ -569,18 +575,20 @@ if __name__ == '__main__':
             except Exception as e:
                 print(f"[!] Could not launch embedded Chromium window: {e}")
         
-        # NO fallback to webbrowser.open() — that would open Edge/Brave/Firefox
-        # which breaks the self-contained app experience.
+        # Fallback: Open in the system default browser.
+        # This only happens when Chromium is not yet installed (typically first launch).
+        # The infinite-tab bug was caused by sys.executable re-spawning the EXE, NOT by
+        # webbrowser.open(), so this fallback is safe.
+        import webbrowser
         print("")
         print("  ================================================================")
-        print("  [!] Chromium browser not yet installed.")
-        print("  [!] Please open this URL manually in any browser:")
-        print("  [!]   http://127.0.0.1:5000")
-        print("  [!]")
-        print("  [!] Chromium is being installed in the background.")
-        print("  [!] Restart the app after installation completes.")
+        print("  [!] Embedded Chromium not yet installed — opening in your")
+        print("  [!] default browser instead. Chromium is being installed in")
+        print("  [!] the background. Restart the app once it finishes for the")
+        print("  [!] best experience (dedicated app window).")
         print("  ================================================================")
         print("")
+        webbrowser.open('http://127.0.0.1:5000')
 
     print(f"================================================================")
     print(f"[*] Email Assessor running securely via Flask at http://127.0.0.1:5000")
@@ -588,5 +596,6 @@ if __name__ == '__main__':
     print(f"[*] Close the app window or press Ctrl+C in this terminal to exit.")
     print(f"================================================================")
     
-    Timer(1.5, open_browser).start()
+    # Give the background Chromium installer a moment to finish on first launch
+    Timer(2.0, open_browser).start()
     app.run(host='127.0.0.1', port=5000, debug=False, threaded=False)
