@@ -646,4 +646,9 @@ if __name__ == '__main__':
     # and guard against Flask reloader double-firing if debug is enabled
     if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
         Timer(1.0, open_browser).start()
-    app.run(host='127.0.0.1', port=5000, debug=False, threaded=False)
+
+    # Bind to 0.0.0.0 inside Docker to allow port-forwarding, default to 127.0.0.1 for native/EXE runs
+    is_docker = os.path.exists('/.dockerenv') or os.environ.get('IS_DOCKER') == 'true'
+    bind_host = '0.0.0.0' if is_docker else '127.0.0.1'
+    
+    app.run(host=bind_host, port=5000, debug=False, threaded=False)
