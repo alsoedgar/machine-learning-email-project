@@ -478,11 +478,46 @@ if __name__ == '__main__':
     Thread(target=check_and_install_playwright, daemon=True).start()
 
     def open_browser():
-        webbrowser.open('http://127.0.0.1:5000')
+        """
+        Open the Email Assessor dashboard in its own isolated Chromium window.
+        This deliberately bypasses the OS default browser (Brave, Edge, Firefox, etc.)
+        so the app always runs inside its own controlled Chromium environment,
+        regardless of what browser the user has installed or set as default.
+        """
+        try:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                # Find Playwright's own embedded Chromium binary path
+                chromium_path = p.chromium.executable_path
+            
+            if chromium_path and os.path.exists(chromium_path):
+                # Launch Chromium directly as a visible app window
+                # --app=URL makes it open in a minimal chrome-app window (no address bar clutter)
+                # --window-size sets it to a comfortable default
+                subprocess.Popen([
+                    chromium_path,
+                    '--app=http://127.0.0.1:5000',
+                    '--window-size=1280,900',
+                    '--disable-extensions',
+                    '--no-first-run',
+                    '--no-default-browser-check',
+                    '--disable-background-networking',
+                    '--disable-sync',
+                ])
+                print("[*] Opened Email Assessor in its own isolated Chromium window.")
+                return
+        except Exception as e:
+            print(f"[!] Could not launch embedded Chromium window: {e}")
         
+        # Fallback: if Playwright is not yet installed, fall back to OS default browser
+        import webbrowser
+        print("[!] Falling back to system default browser (Playwright not available yet).")
+        webbrowser.open('http://127.0.0.1:5000')
+
     print(f"================================================================")
     print(f"[*] Email Assessor running securely via Flask at http://127.0.0.1:5000")
-    print(f"[*] Close the browser tab or press Ctrl+C to terminate.")
+    print(f"[*] Opening in a dedicated Chromium window (not your default browser).")
+    print(f"[*] Close the app window or press Ctrl+C in this terminal to exit.")
     print(f"================================================================")
     
     Timer(1.2, open_browser).start()
