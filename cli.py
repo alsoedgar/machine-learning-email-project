@@ -1,6 +1,37 @@
 import os
 import sys
 import argparse
+import subprocess
+
+def _ensure_virtualenv():
+    # Skip check if compiled as a standalone PyInstaller binary
+    if getattr(sys, 'frozen', False):
+        return
+        
+    # Get project root folder containing this file
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    venv_dir = os.path.join(base_dir, '.venv')
+    
+    if not os.path.isdir(venv_dir):
+        return
+        
+    # Verify if active interpreter path resides inside the .venv directory
+    is_in_venv = venv_dir.lower() in sys.executable.lower()
+    
+    if not is_in_venv:
+        # Resolve path to the local virtualenv python binary
+        if os.name == 'nt':  # Windows
+            venv_python = os.path.join(venv_dir, 'Scripts', 'python.exe')
+        else:  # macOS / Linux
+            venv_python = os.path.join(venv_dir, 'bin', 'python')
+            
+        if os.path.exists(venv_python):
+            print(f"[*] Local virtual environment detected at {venv_python}")
+            print("[*] Re-executing cli.py using venv python interpreter...")
+            sys.exit(subprocess.call([venv_python] + sys.argv))
+
+_ensure_virtualenv()
+
 from colorama import init, Fore, Style
 from analyzer import EmailAnalyzer
 

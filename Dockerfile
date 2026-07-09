@@ -4,7 +4,7 @@
 # =============================================================================
 
 # ---------- Stage 1: Build dependencies ----------
-FROM python:3.11-slim-bookworm AS builder
+FROM python:3.12-slim-bookworm AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -16,7 +16,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ---------- Stage 2: Production image ----------
-FROM python:3.11-slim-bookworm
+FROM python:3.12-slim-bookworm
 
 # Metadata labels (OCI standard)
 LABEL org.opencontainers.image.title="Email Assessor"
@@ -28,35 +28,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PLAYWRIGHT_BROWSERS_PATH=/home/appuser/.cache/ms-playwright
 
-# Install ONLY the system libraries Playwright Chromium needs at runtime.
-# Using --no-install-recommends keeps the image minimal.
-# Clean apt cache in the same RUN layer to avoid bloating the image.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Core rendering libraries
-    libglib2.0-0 \
-    libnss3 \
-    libnspr4 \
-    libatk-1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxext6 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2 \
-    # Fonts for proper text rendering in screenshots
-    fonts-liberation \
-    fonts-noto-color-emoji \
-    # Networking utility for health checks
-    curl \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 # Create a non-root system user with a locked password and no login shell.
 # UID 10001 avoids collision with standard system users.
 RUN groupadd -g 10001 appgroup && \
@@ -67,12 +38,18 @@ COPY --from=builder /install /usr/local
 
 WORKDIR /app
 
+# Install curl (needed for Docker Healthcheck) and Playwright's system dependencies.
+# We run 'playwright install-deps' as root so it installs exact OS dependencies.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && python -m playwright install-deps \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 # Install Playwright Chromium binary AS the non-root user.
 # This downloads ~140MB of Chromium into /home/appuser/.cache/ms-playwright
 # so it's ready immediately on container start — no first-run delay.
 USER appuser
-RUN python -m playwright install chromium && \
-    python -m playwright install-deps 2>/dev/null || true
+RUN python -m playwright install chromium
 
 # Switch back to root briefly to copy source files with correct ownership
 USER root
