@@ -597,5 +597,7 @@ if __name__ == '__main__':
     print(f"================================================================")
     
     # Give the background Chromium installer a moment to finish on first launch
-    Timer(2.0, open_browser).start()
+    # and guard against Flask reloader double-firing if debug is enabled
+    if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+        Timer(2.0, open_browser).start()
     app.run(host='127.0.0.1', port=5000, debug=False, threaded=False)
