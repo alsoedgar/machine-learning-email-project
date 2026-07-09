@@ -39,32 +39,101 @@ Unlike cloud-based security products, Email Assessor is designed with privacy an
 
 To inspect links safely, the application launches a headless Chromium instance using **Playwright**. To ensure that visiting malicious links cannot compromise your host machine, local network, or browser, we enforce strict security configurations across both static tracing and the **Live Interactive Sandbox**:
 
-* **1. Intranet & DNS Rebinding Protection (SSRF Prevention):** The backend resolves any target domain to its IP address via DNS *before* launching the browser or executing navigations. If the host resolves to a private network, loopback, or local subnet (`127.0.0.1`, `localhost`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`), the request is immediately rejected.
-* **2. Docker Gateway & WSL2 Bypass Blockers:** To prevent malicious scripts from exploiting host-only bridge networks (such as Docker WSL2 instances on Windows), the analyzer explicitly blocks traffic targeting Docker internal host interfaces (`host.docker.internal`, `gateway.docker.internal`, and `host.wsl`).
+* **1. Intranet & DNS Rebinding Protection (SSRF Prevention):** The backend resolves any target domain to its IP address via DNS *before* launching the browser or executing navigations. If the host resolves to a private network, loopback, or local subnet (`127.0.0.1`, `localhost`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`), the request is immediately rejected. Additionally, **every sub-resource request** (fetch, XHR, WebSocket, image, iframe) is intercepted via Playwright's `page.route('**/*')` and validated against the same IP blocklist at runtime, preventing multi-step DNS rebinding attacks that bypass pre-flight checks.
+* **2. Docker Gateway & WSL2 Bypass Blockers:** To prevent malicious scripts from exploiting host-only bridge networks (such as Docker WSL2 instances on Windows), the analyzer explicitly blocks traffic targeting Docker internal host interfaces (`host.docker.internal`, `gateway.docker.internal`, and `host.wsl`), as well as Docker gateway IP ranges (`172.16.0.0/12`).
 * **3. Execution Process Isolation & Active Sandboxing:** Chromium runs with the native browser sandbox fully enabled (do NOT run with `--no-sandbox` flags). It does not share cookies, session tokens, login history, cache, or credentials with your default web browser.
 * **4. Resource & Memory Caps (DoS Mitigation):** Chromium launch configurations are restricted with strict memory controls (`--js-flags="--max-old-space-size=512"`). This caps the browser's JavaScript engine heap at **512MB RAM**, preventing crash-loops, Canvas leaks, or infinite resource leaks from locking up your host operating system.
 * **5. Zero Client-Side Script Execution (Base64 Proxy Delivery):** When you interact with a page in **Live Mode**, the target website's scripts and code *never* reach your browser. Your mouse clicks are translated into coordinates, sent to the server as API requests, and executed by Playwright. The server returns a clean base64-encoded PNG screenshot of the updated state. No malicious payloads, drive-by downloads, or scripts can execute on your local device.
 * **6. Stripped Device & Sensor Permissions:** All active device integrations are completely disabled:
   * Camera, Microphone, and Midi Access: Blocked.
   * Geolocation, Push Notifications, and Clipboard: Blocked.
-* **7. Escape & Popup Prevention:** Chromium launches with `--block-new-web-contents` and `--mute-audio` enabled, which automatically catches and kills any script attempts to spawn popups, new tabs, prompt dialogs, audio alerts, or frame escapes.
+* **7. Escape & Popup Prevention:** Chromium launches with `--block-new-web-contents` and `--mute-audio` enabled, which automatically catches and kills any script attempts to spawn popups, new tabs, prompt dialogs, audio alerts, or frame escapes. The dashboard HTML also includes a `<base target="_self">` tag and overrides `window.open()` to prevent any accidental external browser tab opens.
 * **8. Volatile Session Lifecycles:** When you close the sandbox modal, the backend kills the Playwright instance, instantly destroying the browser context, session memory, local storage, and volatile cache.
+* **9. Browser Anti-Fingerprinting Stealth:** All Playwright browser contexts are configured with a realistic desktop User-Agent string, standard locales (`en-US`), timezone overrides, and runtime script injection that removes `navigator.webdriver` and defines `window.chrome` — making it significantly harder for Cloudflare, reCAPTCHA, and other bot-detection systems to block analysis.
+* **10. Isolated Chromium App Window:** The dashboard opens in Playwright's own embedded Chromium binary with a dedicated `--user-data-dir`, not your default browser (Edge, Brave, Firefox, etc.). This prevents profile contamination, session restore loops, and ensures no browser extensions can interfere with analysis.
 
 ---
 
-## 🐋 Hardened Container Deployment (Docker Sandbox)
+## 🐋 Docker Deployment (Recommended for Maximum Security)
 
-For maximum isolation when inspecting untrusted link inputs, the repository includes a multi-layered Docker sandboxing wrapper to shield your host Windows OS from Zero-Day browser vulnerabilities:
+> [!IMPORTANT]
+> **For the strongest security posture, we strongly recommend running Email Assessor inside Docker.** Docker provides OS-level process isolation that protects your host machine even if a Chromium zero-day exploit is triggered by a malicious link. The standalone EXE runs Playwright directly on your host OS — Docker adds an entire container boundary between the malicious content and your files.
 
-1. **Non-Root Execution context:** The application runs inside the container as a dedicated unprivileged user (`USER appuser`, UID `10001`), preventing container-escape exploits from writing to your host OS files.
-2. **CPU & Memory Quotas:** Resource consumption is capped strictly to **1.5 CPU cores** and **1GB RAM** to mitigate host system freezing during crash loop attacks.
-3. **LAN Port Lockdown:** Web interface binding is locked to the loopback interface (`127.0.0.1:5000`) on the host machine, preventing external LAN probing.
+### Why Docker is More Secure
 
-To launch the isolated container setup:
+| Protection Layer | Standalone EXE | Docker Container |
+|:---|:---:|:---:|
+| Chromium browser sandbox | ✅ | ✅ |
+| SSRF / DNS rebinding blockers | ✅ | ✅ |
+| Resource memory caps | ✅ | ✅ |
+| OS-level process isolation | ❌ | ✅ |
+| Read-only filesystem | ❌ | ✅ |
+| Linux capability drops | ❌ | ✅ |
+| Network egress filtering | App-level | App-level + Docker bridge |
+| Disposable environment | ❌ | ✅ |
+| Privilege escalation prevention | ❌ | ✅ |
+
+### Prerequisites
+
+1. Install [**Docker Desktop**](https://www.docker.com/products/docker-desktop/) for your operating system.
+2. Ensure Docker Desktop is running before proceeding.
+
+### Quick Start (One Command)
+
 ```powershell
-docker-compose up --build -d
+# Clone the repository and launch
+git clone https://github.com/alsoedgar/machine-learning-email-project.git
+cd machine-learning-email-project
+docker compose up --build -d
 ```
-The application will be available securely at: 👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
+
+The first build will:
+- Install all Python dependencies
+- Download and install the Playwright Chromium browser (~140MB)
+- Pre-train the ML classifier from the seed dataset
+- Set up the non-root user and filesystem permissions
+
+Once built, the dashboard is available at: 👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
+
+### Docker Security Hardening Details
+
+The included `docker-compose.yml` enforces the following security controls:
+
+| Control | Configuration | Purpose |
+|:---|:---|:---|
+| **Non-root user** | `UID 10001`, no login shell | Prevents container-escape exploits from writing to host OS files |
+| **Read-only filesystem** | `read_only: true` | Malware cannot persist on the container disk |
+| **tmpfs mounts** | `/tmp` and `/run` (noexec, nosuid) | Writable scratch space with no execute permission |
+| **Capability drops** | `cap_drop: ALL`, `cap_add: SYS_ADMIN` | Drops all Linux capabilities except the minimum for Chromium |
+| **No privilege escalation** | `no-new-privileges: true` | Blocks setuid binaries from elevating permissions |
+| **CPU/Memory limits** | 2 CPUs, 2GB RAM max | Prevents crash-loops from freezing your host OS |
+| **Internal network** | `internal: true` on bridge | **Blocks all outbound internet access** from the container |
+| **Loopback-only ports** | `127.0.0.1:5000:5000` | Dashboard is inaccessible from your LAN/Wi-Fi |
+| **Log rotation** | 10MB max, 3 files | Prevents disk exhaustion from verbose output |
+| **Health checks** | Every 30s via curl | Auto-detects and restarts crashed instances |
+
+### Container Management Commands
+
+```powershell
+# Start the container (first time or after changes)
+docker compose up --build -d
+
+# View live logs
+docker compose logs -f email-assessor
+
+# Stop the container
+docker compose down
+
+# Full reset — destroy all data, volumes, and cached state
+docker compose down --volumes --rmi all
+docker compose up --build -d
+```
+
+> [!TIP]
+> Periodically reset the container to a clean slate to destroy any persistent artifacts. Run:
+> ```powershell
+> docker compose down --volumes && docker compose up -d --build
+> ```
 
 ---
 
@@ -78,6 +147,9 @@ Here is what each component of the project does:
 ├── analyzer.py              # Core EmailAnalyzer orchestrating parsing, heuristics, ML predictions, and Playwright tracing
 ├── test_analyzer.py         # Unit testing suite validating parser safety, hashing, and classifiers
 ├── requirements.txt         # List of Python dependencies (Flask, Playwright, BeautifulSoup, etc.)
+├── Dockerfile               # Multi-stage production Docker image with Chromium pre-installed
+├── docker-compose.yml       # Hardened container orchestration with security controls
+├── .dockerignore            # Excludes build artifacts and dev files from Docker context
 │
 ├── utils/
 │   ├── parser.py            # EmailParser: decodes MIME payloads, subject, body text/HTML, and attachment content
@@ -106,23 +178,48 @@ Here is what each component of the project does:
 
 ## 🚀 How to Use Email Assessor
 
-There are **three ways** to use this tool depending on your needs:
+There are **four ways** to use this tool depending on your needs:
 
 ---
 
-### ⚡ Option 1: Download the Pre-Built Executable (Easiest — No Python Required)
+### 🐋 Option 1: Docker Container (Recommended — Most Secure)
+
+The safest way to run Email Assessor, especially if you'll be analyzing real phishing emails and following suspicious links.
+
+#### Prerequisites
+- [**Docker Desktop**](https://www.docker.com/products/docker-desktop/) installed and running.
+
+```powershell
+# 1. Clone the repository
+git clone https://github.com/alsoedgar/machine-learning-email-project.git
+cd machine-learning-email-project
+
+# 2. Build and launch (everything installs automatically on first run)
+docker compose up --build -d
+
+# 3. Open your browser to:
+#    http://127.0.0.1:5000
+```
+
+> **First build takes 2–5 minutes** (downloading Chromium + dependencies). Subsequent starts are instant.
+
+---
+
+### ⚡ Option 2: Download the Pre-Built Executable (Easiest — No Python Required)
 
 If you just want to use the app without installing anything:
 
 1. Go to the [**Releases**](../../releases) page of this repository.
 2. Download **`EmailAssessor.exe`** (Windows) from the latest release.
-3. Double-click `EmailAssessor.exe` — the app will start automatically and open your browser to the dashboard.
+3. Double-click `EmailAssessor.exe` — the app will start automatically and open in its own dedicated Chromium window.
 
 > **Note:** On first launch Windows may show a SmartScreen warning since the app is unsigned. Click **"More info" → "Run anyway"** to proceed. The app runs entirely locally and makes no external connections.
 
+> **Note:** The EXE opens in its own embedded Chromium browser window — not your default browser (Edge, Brave, Firefox). If Chromium hasn't been installed yet, the app will install it automatically in the background on first launch.
+
 ---
 
-### 🌐 Option 2: Run the Web Dashboard from Source Code
+### 🌐 Option 3: Run the Web Dashboard from Source Code
 
 If you want to run the full web app with all features from the source:
 
@@ -147,11 +244,11 @@ playwright install chromium
 python web_app.py
 ```
 
-Your browser will automatically open to 👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
+The app will automatically open in its own Chromium window at 👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
 ---
 
-### 💻 Option 3: Use the Command-Line Interface (CLI)
+### 💻 Option 4: Use the Command-Line Interface (CLI)
 
 If you prefer a terminal-based workflow, the CLI provides the same full analysis without a browser:
 
@@ -222,6 +319,9 @@ Precautionary lifecycles kill the browser threads, but if an advanced exploit su
 > [!TIP]
 > Periodically reset the container to a clean slate to destroy any persistent session changes. Run the following command in your terminal:
 > ```powershell
-> docker-compose down --volumes && docker-compose up -d --build
+> docker compose down --volumes && docker compose up -d --build
 > ```
 
+### 3. Standalone EXE Security Considerations
+> [!CAUTION]
+> The standalone EXE runs Playwright's Chromium **directly on your host OS** without container isolation. While the application-level sandboxing (SSRF protection, memory caps, permission stripping) is still fully active, a theoretical Chromium zero-day exploit could access files with your user's permissions. **If you regularly analyze real-world phishing campaigns, use Docker instead.**

@@ -1,0 +1,35 @@
+# Ignore version control
+.git
+.gitignore
+
+# Ignore Python virtual environments
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore build artifacts
+build/
+dist/
+*.spec
+*.exe
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# Ignore user-generated runtime files (will be regenerated on first launch)
+feedback_log.csv
+model_state.json
+uploads/
+
+# Ignore Docker files (no recursion)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Ignore documentation images and non-essential files
+*.md
+!data/DATASETS.md
+LICENSE

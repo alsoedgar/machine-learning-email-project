@@ -1,42 +1,115 @@
-version: '3.8'
+# =============================================================================
+# Docker Compose — Email Assessor Hardened Sandbox
+# =============================================================================
+# This configuration runs Email Assessor inside an isolated container with
+# strict resource limits, network isolation, read-only filesystem, and
+# security capability drops. Recommended for maximum protection when
+# analyzing untrusted emails and following suspicious links.
+# =============================================================================
 
 services:
   email-assessor:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: email-security-sandbox
-    ports:
-      - "127.0.0.1:5000:5000"  # Expose web UI strictly on local loopback to block external subnet probe attempts
     
-    # 1. Resource Exhaustion (DoS) Mitigation: Limit CPU and Memory consumption
+    # ── Port Binding ──
+    # Bind ONLY to the loopback interface (127.0.0.1) on the host.
+    # This ensures the dashboard is inaccessible from your LAN or Wi-Fi.
+    ports:
+      - "127.0.0.1:5000:5000"
+    
+    # ── Resource Limits (DoS Mitigation) ──
+    # Cap CPU and memory so a malicious crash-loop or memory leak
+    # cannot freeze your entire host operating system.
     deploy:
       resources:
         limits:
-          cpus: '1.5'
-          memory: 1g
+          cpus: '2.0'
+          memory: 2g
         reservations:
-          memory: 256m
-
-    # 2. Host OS Isolation: Keep write states bounded to persistent virtual volumes
+          cpus: '0.5'
+          memory: 512m
+    
+    # ── Filesystem Security ──
+    # Mount the root filesystem as read-only to prevent malware from
+    # persisting on the container disk. Only /tmp, /app/data, and
+    # /app/uploads are writable via tmpfs and named volumes.
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,noexec,nosuid
+      - /run:size=64m,noexec,nosuid
+    
+    # ── Persistent Data Volumes ──
+    # Isolate user data (analysis logs, seed datasets) and uploads
+    # into named volumes. These survive container restarts but can
+    # be wiped with `docker compose down --volumes` for a clean slate.
     volumes:
       - app-data:/app/data
       - app-uploads:/app/uploads
-      
-    # 3. Network Sandboxing: Drop capability to hit host OS internal services via docker host bridge network options
-    # Sets container bridge to isolated context
+      # Playwright needs a writable cache directory
+      - playwright-cache:/home/appuser/.cache
+    
+    # ── Network Isolation ──
+    # Place the container on an isolated bridge network with a custom
+    # subnet. This prevents the container from probing host services
+    # via the default Docker bridge gateway.
     networks:
-      - sandbox-isolated-net
+      - sandbox-net
+    
+    # ── Linux Security Capabilities ──
+    # Drop ALL default Linux capabilities, then add back only the
+    # minimum required for Chromium's sandbox to function.
+    # This prevents container-escape exploits from escalating privileges.
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_ADMIN    # Required for Chromium's namespace sandbox (clone/unshare)
 
-    # 4. Running Context: Auto-restart on unexpected crashes/resource exhaustion resets
+    # ── Additional Security Hardening ──
+    security_opt:
+      - no-new-privileges:true   # Prevent privilege escalation via setuid binaries
+    
+    
+    # ── Environment Variables ──
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - PLAYWRIGHT_BROWSERS_PATH=/home/appuser/.cache/ms-playwright
+    
+    # ── Restart Policy ──
+    # Auto-restart on crashes, but stop if manually terminated.
     restart: unless-stopped
 
+    # ── Logging ──
+    # Limit log file size to prevent disk exhaustion from verbose output.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ── Named Volumes ──
 volumes:
   app-data:
+    driver: local
   app-uploads:
+    driver: local
+  playwright-cache:
+    driver: local
 
+# ── Networks ──
 networks:
-  sandbox-isolated-net:
+  sandbox-net:
     driver: bridge
-    # Configure bridge subnets to ensure the container network has no access route to host local intranet ranges
+    # NOTE: We intentionally do NOT set 'internal: true' here because the
+    # sandbox needs outbound internet access to navigate to and screenshot
+    # external URLs for phishing link analysis. Application-level SSRF
+    # protection (IP validation on every request via page.route) blocks
+    # all requests to private subnets, loopback, and Docker gateways.
+    # Assign a non-standard subnet to avoid conflicts with common
+    # home/office networks and Docker's default bridge.
     ipam:
       config:
         - subnet: 172.28.0.0/16
