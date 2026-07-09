@@ -480,9 +480,9 @@ if __name__ == '__main__':
         if not os.path.isdir(pw_dir):
             return None
         
-        # Playwright stores Chromium as: ms-playwright/chromium-<version>/chrome-win/chrome.exe
+        # Playwright stores Chromium as: ms-playwright/chromium-<version>/chrome-win/chrome.exe (or chrome-win64/chrome.exe)
         patterns = [
-            os.path.join(pw_dir, 'chromium-*', 'chrome-win', 'chrome.exe'),
+            os.path.join(pw_dir, 'chromium-*', 'chrome-win*', 'chrome.exe'),
             os.path.join(pw_dir, 'chromium-*', 'chrome-linux', 'chrome'),
             os.path.join(pw_dir, 'chromium-*', 'chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'),
         ]
