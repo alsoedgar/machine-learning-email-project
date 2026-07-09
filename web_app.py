@@ -452,10 +452,13 @@ def api_shutdown():
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    from threading import Timer, Thread
+    from threading import Timer, Thread, Event
     import subprocess
     import tempfile
     import glob
+    
+    # Event to signal when Playwright Chromium binary is ready
+    chromium_installed_event = Event()
     
     # PyInstaller environment path fix for Playwright
     # Force Playwright to search for browsers in the user's local AppData folder instead of the temporary extraction dir
@@ -493,42 +496,37 @@ if __name__ == '__main__':
 
     # Auto-installation routine: verify if Chromium binary is installed, otherwise download it
     def check_and_install_playwright():
-        # First check if the binary already exists on disk (fast, no side effects)
-        chromium_path = _find_chromium_executable()
-        if chromium_path and os.path.exists(chromium_path):
-            print(f"[*] Playwright Chromium engine verified at: {chromium_path}")
-            return
-        
-        print("[!] Playwright Chromium driver not found. Starting automatic installation...")
         try:
+            # First check if the binary already exists on disk (fast, no side effects)
+            chromium_path = _find_chromium_executable()
+            if chromium_path and os.path.exists(chromium_path):
+                print(f"[*] Playwright Chromium engine verified at: {chromium_path}")
+                chromium_installed_event.set()
+                return
+            
+            print("[!] Playwright Chromium driver not found. Starting automatic installation...")
             # Find the playwright CLI module bundled inside the EXE or virtualenv
-            # CRITICAL: Do NOT use sys.executable in frozen apps — it points to EmailAssessor.exe
-            # which would re-launch the entire app in an infinite loop.
             import playwright
             pw_package_dir = os.path.dirname(playwright.__file__)
             pw_cli = os.path.join(pw_package_dir, '__main__.py')
             
             if getattr(sys, 'frozen', False):
                 # In frozen mode, use the playwright CLI script directly with the bundled Python
-                # Since we can't call python directly from a frozen exe, use the playwright driver
                 pw_driver_dir = os.path.join(pw_package_dir, 'driver')
-                # Look for the playwright driver executable
-                driver_patterns = [
-                    os.path.join(pw_driver_dir, 'package', 'cli.js'),
-                    os.path.join(pw_driver_dir, 'node.exe'),
-                ]
                 node_exe = os.path.join(pw_driver_dir, 'node.exe')
                 cli_js = os.path.join(pw_driver_dir, 'package', 'cli.js')
                 
                 if os.path.exists(node_exe) and os.path.exists(cli_js):
                     subprocess.run([node_exe, cli_js, 'install', 'chromium'], check=True, timeout=120)
                     print("[*] Playwright Chromium engine installed successfully!")
+                    chromium_installed_event.set()
                 else:
                     print(f"[x] Playwright driver not found in bundled package. Run 'playwright install chromium' manually.")
             else:
                 # Non-frozen (development) mode: safe to use sys.executable
                 subprocess.run([sys.executable, '-m', 'playwright', 'install', 'chromium'], check=True, timeout=120)
                 print("[*] Playwright Chromium engine installed successfully!")
+                chromium_installed_event.set()
         except Exception as e:
             print(f"[x] Auto-install failed: {e}")
             print("[x] Please run 'playwright install chromium' manually for sandbox features.")
@@ -542,11 +540,25 @@ if __name__ == '__main__':
         This deliberately bypasses the OS default browser (Brave, Edge, Firefox, etc.)
         so the app always runs inside its own controlled Chromium environment.
         
-        Falls back to the system default browser only when Chromium is not installed,
-        so the user always sees *something* open — especially important on first launch.
+        If Chromium is not installed yet (e.g. first run), it waits for the background
+        installation to finish, then automatically launches the dedicated window.
         """
+        # Check if we need to wait for installation thread to finish
         chromium_path = _find_chromium_executable()
-        
+        if not (chromium_path and os.path.exists(chromium_path)):
+            print("")
+            print("  ================================================================")
+            print("  [!] Embedded Chromium is not yet installed.")
+            print("  [!] Downloading and configuring the engine in the background...")
+            print("  [!] The dashboard will open automatically in its dedicated window")
+            print("  [!] as soon as the installation is ready.")
+            print("  ================================================================")
+            print("")
+            
+            # Wait for background installation thread to complete (up to 120s timeout)
+            chromium_installed_event.wait(timeout=120)
+            chromium_path = _find_chromium_executable()
+
         if chromium_path and os.path.exists(chromium_path):
             try:
                 # Create an isolated temporary user-data-dir so the embedded Chromium:
@@ -575,17 +587,12 @@ if __name__ == '__main__':
             except Exception as e:
                 print(f"[!] Could not launch embedded Chromium window: {e}")
         
-        # Fallback: Open in the system default browser.
-        # This only happens when Chromium is not yet installed (typically first launch).
-        # The infinite-tab bug was caused by sys.executable re-spawning the EXE, NOT by
-        # webbrowser.open(), so this fallback is safe.
+        # Fallback: Open in the system default browser ONLY if the installer failed/timed out
         import webbrowser
         print("")
         print("  ================================================================")
-        print("  [!] Embedded Chromium not yet installed — opening in your")
-        print("  [!] default browser instead. Chromium is being installed in")
-        print("  [!] the background. Restart the app once it finishes for the")
-        print("  [!] best experience (dedicated app window).")
+        print("  [!] Failed to load embedded Chromium. Falling back to default")
+        print("  [!] browser for session access.")
         print("  ================================================================")
         print("")
         webbrowser.open('http://127.0.0.1:5000')
@@ -596,8 +603,8 @@ if __name__ == '__main__':
     print(f"[*] Close the app window or press Ctrl+C in this terminal to exit.")
     print(f"================================================================")
     
-    # Give the background Chromium installer a moment to finish on first launch
+    # Give the background Chromium check a brief moment to run first
     # and guard against Flask reloader double-firing if debug is enabled
     if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
-        Timer(2.0, open_browser).start()
+        Timer(1.0, open_browser).start()
     app.run(host='127.0.0.1', port=5000, debug=False, threaded=False)
