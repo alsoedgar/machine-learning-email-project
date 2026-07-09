@@ -108,8 +108,4 @@ networks:
     # external URLs for phishing link analysis. Application-level SSRF
     # protection (IP validation on every request via page.route) blocks
     # all requests to private subnets, loopback, and Docker gateways.
-    # Assign a non-standard subnet to avoid conflicts with common
-    # home/office networks and Docker's default bridge.
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
+
