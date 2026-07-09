@@ -507,14 +507,11 @@ if __name__ == '__main__':
             user_profile = os.environ.get('USERPROFILE') or os.environ.get('HOME') or ''
             pw_dir = os.path.join(user_profile, 'AppData', 'Local', 'ms-playwright')
         
-        if not os.path.isdir(pw_dir):
-            return None
-        
         # Playwright stores Chromium as: ms-playwright/chromium-<version>/chrome-win/chrome.exe (or chrome-win64/chrome.exe)
         patterns = [
             os.path.join(pw_dir, 'chromium-*', 'chrome-win*', 'chrome.exe'),
-            os.path.join(pw_dir, 'chromium-*', 'chrome-linux', 'chrome'),
-            os.path.join(pw_dir, 'chromium-*', 'chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'),
+            os.path.join(pw_dir, 'chromium-*', 'chrome-linux*', 'chrome'),
+            os.path.join(pw_dir, 'chromium-*', 'chrome-mac*', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'),
         ]
         for pattern in patterns:
             matches = glob.glob(pattern)
@@ -573,6 +570,18 @@ if __name__ == '__main__':
         If Chromium is not installed yet (e.g. first run), it waits for the background
         installation to finish, then automatically launches the dedicated window.
         """
+        # If running inside a Docker container, do not attempt to open any browser window.
+        # The user will access it via http://localhost:5000 on the host.
+        if os.path.exists('/.dockerenv') or os.environ.get('IS_DOCKER') == 'true':
+            print("")
+            print("  ================================================================")
+            print("  [*] Email Assessor running securely inside Docker!")
+            print("  [*] Access the dashboard from your host machine browser at:")
+            print("  [*]   http://localhost:5000")
+            print("  ================================================================")
+            print("")
+            return
+
         # Check if we need to wait for installation thread to finish
         chromium_path = _find_chromium_executable()
         if not (chromium_path and os.path.exists(chromium_path)):
