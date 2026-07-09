@@ -446,73 +446,141 @@ def api_shutdown():
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    import webbrowser
-    from threading import Timer
+    from threading import Timer, Thread
     import subprocess
+    import tempfile
+    import glob
     
     # PyInstaller environment path fix for Playwright
     # Force Playwright to search for browsers in the user's local AppData folder instead of the temporary extraction dir
     if getattr(sys, 'frozen', False):
-        user_profile = os.environ.get('USERPROFILE') or os.environ.get('HOME') or 'C:\\Users\\maldo'
+        user_profile = os.environ.get('USERPROFILE') or os.environ.get('HOME') or ''
         os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.join(user_profile, 'AppData', 'Local', 'ms-playwright')
 
-    # Auto-installation routine: verify if Chromium binary is installed, otherwise download it silently
+    def _find_chromium_executable():
+        """
+        Locate the Playwright-managed Chromium binary by scanning the ms-playwright directory.
+        This avoids using sync_playwright() which has side effects and threading issues.
+        Returns the path to chrome.exe or None.
+        """
+        pw_dir = os.environ.get('PLAYWRIGHT_BROWSERS_PATH', '')
+        if not pw_dir:
+            user_profile = os.environ.get('USERPROFILE') or os.environ.get('HOME') or ''
+            pw_dir = os.path.join(user_profile, 'AppData', 'Local', 'ms-playwright')
+        
+        if not os.path.isdir(pw_dir):
+            return None
+        
+        # Playwright stores Chromium as: ms-playwright/chromium-<version>/chrome-win/chrome.exe
+        patterns = [
+            os.path.join(pw_dir, 'chromium-*', 'chrome-win', 'chrome.exe'),
+            os.path.join(pw_dir, 'chromium-*', 'chrome-linux', 'chrome'),
+            os.path.join(pw_dir, 'chromium-*', 'chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'),
+        ]
+        for pattern in patterns:
+            matches = glob.glob(pattern)
+            if matches:
+                # Use the newest version (last alphabetically)
+                matches.sort()
+                return matches[-1]
+        return None
+
+    # Auto-installation routine: verify if Chromium binary is installed, otherwise download it
     def check_and_install_playwright():
+        # First check if the binary already exists on disk (fast, no side effects)
+        chromium_path = _find_chromium_executable()
+        if chromium_path and os.path.exists(chromium_path):
+            print(f"[*] Playwright Chromium engine verified at: {chromium_path}")
+            return
+        
+        print("[!] Playwright Chromium driver not found. Starting automatic installation...")
         try:
-            from playwright.sync_api import sync_playwright
-            with sync_playwright() as p:
-                # This will throw an error if chromium executable is missing or not installed
-                p.chromium.launch(headless=True)
-            print("[*] Playwright Chromium engine verified and ready.")
-        except Exception:
-            print("[!] Playwright Chromium driver missing. Starting automatic installation...")
-            try:
-                # Call playwright install command via subprocess
-                subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
+            # Find the playwright CLI module bundled inside the EXE or virtualenv
+            # CRITICAL: Do NOT use sys.executable in frozen apps — it points to EmailAssessor.exe
+            # which would re-launch the entire app in an infinite loop.
+            import playwright
+            pw_package_dir = os.path.dirname(playwright.__file__)
+            pw_cli = os.path.join(pw_package_dir, '__main__.py')
+            
+            if getattr(sys, 'frozen', False):
+                # In frozen mode, use the playwright CLI script directly with the bundled Python
+                # Since we can't call python directly from a frozen exe, use the playwright driver
+                pw_driver_dir = os.path.join(pw_package_dir, 'driver')
+                # Look for the playwright driver executable
+                driver_patterns = [
+                    os.path.join(pw_driver_dir, 'package', 'cli.js'),
+                    os.path.join(pw_driver_dir, 'node.exe'),
+                ]
+                node_exe = os.path.join(pw_driver_dir, 'node.exe')
+                cli_js = os.path.join(pw_driver_dir, 'package', 'cli.js')
+                
+                if os.path.exists(node_exe) and os.path.exists(cli_js):
+                    subprocess.run([node_exe, cli_js, 'install', 'chromium'], check=True, timeout=120)
+                    print("[*] Playwright Chromium engine installed successfully!")
+                else:
+                    print(f"[x] Playwright driver not found in bundled package. Run 'playwright install chromium' manually.")
+            else:
+                # Non-frozen (development) mode: safe to use sys.executable
+                subprocess.run([sys.executable, '-m', 'playwright', 'install', 'chromium'], check=True, timeout=120)
                 print("[*] Playwright Chromium engine installed successfully!")
-            except Exception as e:
-                print(f"[x] Auto-install failed: {e}. Sandboxed previews may be disabled until run manually.")
+        except Exception as e:
+            print(f"[x] Auto-install failed: {e}")
+            print("[x] Please run 'playwright install chromium' manually for sandbox features.")
 
     # Run check in a background thread to prevent delaying server startup
-    from threading import Thread
     Thread(target=check_and_install_playwright, daemon=True).start()
 
     def open_browser():
         """
         Open the Email Assessor dashboard in its own isolated Chromium window.
         This deliberately bypasses the OS default browser (Brave, Edge, Firefox, etc.)
-        so the app always runs inside its own controlled Chromium environment,
-        regardless of what browser the user has installed or set as default.
+        so the app always runs inside its own controlled Chromium environment.
+        
+        NEVER calls webbrowser.open() — if Chromium isn't available, it simply
+        prints the URL to the terminal and lets the user open it themselves.
         """
-        try:
-            from playwright.sync_api import sync_playwright
-            with sync_playwright() as p:
-                # Find Playwright's own embedded Chromium binary path
-                chromium_path = p.chromium.executable_path
-            
-            if chromium_path and os.path.exists(chromium_path):
-                # Launch Chromium directly as a visible app window
-                # --app=URL makes it open in a minimal chrome-app window (no address bar clutter)
-                # --window-size sets it to a comfortable default
+        chromium_path = _find_chromium_executable()
+        
+        if chromium_path and os.path.exists(chromium_path):
+            try:
+                # Create an isolated temporary user-data-dir so the embedded Chromium:
+                # 1. Never shares profile data with the user's Edge/Chrome/Brave
+                # 2. Won't try to restore old sessions (prevents infinite tab spawning)
+                # 3. Won't show "set as default browser" prompts
+                user_data_dir = os.path.join(tempfile.gettempdir(), 'email_assessor_chromium_profile')
+                os.makedirs(user_data_dir, exist_ok=True)
+                
                 subprocess.Popen([
                     chromium_path,
-                    '--app=http://127.0.0.1:5000',
+                    f'--app=http://127.0.0.1:5000',
+                    f'--user-data-dir={user_data_dir}',
                     '--window-size=1280,900',
                     '--disable-extensions',
                     '--no-first-run',
                     '--no-default-browser-check',
                     '--disable-background-networking',
                     '--disable-sync',
+                    '--disable-session-crashed-bubble',
+                    '--disable-infobars',
+                    '--disable-features=TranslateUI',
                 ])
                 print("[*] Opened Email Assessor in its own isolated Chromium window.")
                 return
-        except Exception as e:
-            print(f"[!] Could not launch embedded Chromium window: {e}")
+            except Exception as e:
+                print(f"[!] Could not launch embedded Chromium window: {e}")
         
-        # Fallback: if Playwright is not yet installed, fall back to OS default browser
-        import webbrowser
-        print("[!] Falling back to system default browser (Playwright not available yet).")
-        webbrowser.open('http://127.0.0.1:5000')
+        # NO fallback to webbrowser.open() — that would open Edge/Brave/Firefox
+        # which breaks the self-contained app experience.
+        print("")
+        print("  ================================================================")
+        print("  [!] Chromium browser not yet installed.")
+        print("  [!] Please open this URL manually in any browser:")
+        print("  [!]   http://127.0.0.1:5000")
+        print("  [!]")
+        print("  [!] Chromium is being installed in the background.")
+        print("  [!] Restart the app after installation completes.")
+        print("  ================================================================")
+        print("")
 
     print(f"================================================================")
     print(f"[*] Email Assessor running securely via Flask at http://127.0.0.1:5000")
@@ -520,5 +588,5 @@ if __name__ == '__main__':
     print(f"[*] Close the app window or press Ctrl+C in this terminal to exit.")
     print(f"================================================================")
     
-    Timer(1.2, open_browser).start()
+    Timer(1.5, open_browser).start()
     app.run(host='127.0.0.1', port=5000, debug=False, threaded=False)

@@ -10,6 +10,12 @@
     <!-- Updated path to point to your Flask static directory -->
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}?v=2">
     <link rel="shortcut icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png">
+    <!-- Prevent any links or scripts from opening new browser tabs/windows -->
+    <base target="_self">
+    <script>
+        // Block any accidental window.open() calls from opening the user's default browser
+        window.open = function() { console.warn('Blocked external window.open call'); return null; };
+    </script>
 </head>
 <body>
 
