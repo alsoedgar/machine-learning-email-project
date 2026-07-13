@@ -128,6 +128,8 @@ class EmailAnalyzer:
             if getattr(sys, 'frozen', False):
                 # Write to the directory of the executable for portability
                 model_dir = os.path.dirname(sys.executable)
+            elif os.path.exists('/.dockerenv') or os.environ.get('IS_DOCKER') == 'true':
+                model_dir = '/app/data'
             else:
                 model_dir = os.path.dirname(os.path.abspath(__file__))
                 

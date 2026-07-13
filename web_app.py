@@ -79,11 +79,17 @@ login_manager.init_app(app)
 # Define the write directory (EXE folder if frozen, script folder if running from source)
 if getattr(sys, 'frozen', False):
     write_base_dir = os.path.dirname(sys.executable)
+    UPLOAD_FOLDER = os.path.join(write_base_dir, 'uploads')
 else:
-    write_base_dir = os.path.dirname(os.path.abspath(__file__))
+    # If running inside Docker, write base directory is /app/data to persist in a write-safe volume
+    if os.path.exists('/.dockerenv') or os.environ.get('IS_DOCKER') == 'true':
+        write_base_dir = '/app/data'
+        UPLOAD_FOLDER = '/app/uploads'  # Dedicated volume mount for uploads
+    else:
+        write_base_dir = os.path.dirname(os.path.abspath(__file__))
+        UPLOAD_FOLDER = os.path.join(write_base_dir, 'uploads')
 
 # Define the upload folder in a writable directory
-UPLOAD_FOLDER = os.path.join(write_base_dir, 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Create the upload folder if it doesn't exist
